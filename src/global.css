@@ -1,0 +1,39 @@
+:root {
+  --font-display: 'Comic Sans MS', 'SF Pro Rounded', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --font-mono: monospace;
+
+  /* FlokiPets Happy Theme (Neopets/Club Penguin Vibe) */
+  --background: #6CC5FF; /* Bright Sky Blue */
+  --surface: rgba(255, 255, 255, 0.95); /* Bright friendly white */
+  --surface-border: #FFFFFF; 
+  --primary: #FFD13B; /* Bright Star Yellow */
+  --secondary: #84CC16; /* Grass Green */
+  --text: #1E3A8A; /* Deep Blue text */
+  --text-muted: #3B82F6; /* Lighter Blue text */
+  --radius: 32px; /* Super rounded corners */
+}
+
+body {
+  background-color: var(--background);
+  background-image: radial-gradient(circle at top center, #9FDDFF 0%, #6CC5FF 100%);
+  color: var(--text);
+  font-family: var(--font-display);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Happy Bubbly Card */
+.glass {
+  background: var(--surface);
+  border: 4px solid var(--surface-border);
+  box-shadow: 0 10px 0 rgba(74, 169, 230, 0.6);
+  border-radius: var(--radius);
+}
+
+/* Fun chunky text style for web */
+.text-gradient {
+  color: #FF8C00;
+  text-shadow: 3px 3px 0px #FFE066, -1px -1px 0 #FFFFFF;
+  letter-spacing: 2px;
+}
