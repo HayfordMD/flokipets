@@ -89,7 +89,9 @@ export default function HomeScreen() {
       
       console.log("Auth successful!");
       if (Platform.OS === 'web') {
-        window.location.reload();
+        window.location.href = '/dashboard';
+      } else {
+        router.replace('/dashboard');
       }
     } catch (error: any) {
       console.error("Email auth failed:", error);
@@ -126,18 +128,7 @@ export default function HomeScreen() {
             Connect your wallet or sign in to start earning.
           </Text>
 
-          {(ncbUser || activeAccount) && (
-            <View style={{ width: '100%', alignItems: 'center' }}>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10B981', marginBottom: 16 }}>
-                {flokiBalance} FLOKI
-              </Text>
-              
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-                <Button title="🐾 Mint a Pet" variant="primary" onPress={() => router.push('/mint')} />
-                <Button title="🛒 Enter Store" variant="secondary" onPress={() => router.push('/store')} />
-              </View>
-            </View>
-          )}
+          {/* Replaced old dashboard view with redirect */}
           
           {/* Email Authentication Form */}
           {(!ncbUser && !activeAccount) && (
