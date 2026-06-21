@@ -14,8 +14,15 @@ export function useAuth() {
       try {
         // 1. Get NCB session (Web2)
         const sessionRes = await fetch("/api/auth/get-session", { credentials: "include" });
-        const sessionData = await sessionRes.json();
+        let sessionData = null;
         
+        const contentType = sessionRes.headers.get("content-type");
+        if (sessionRes.ok && contentType && contentType.includes("application/json")) {
+          sessionData = await sessionRes.json();
+        } else if (!sessionRes.ok) {
+          console.warn("Session fetch failed with status:", sessionRes.status);
+        }
+
         let hasNcbUser = false;
         if (sessionData?.user) {
           if (isMounted) setNcbUser(sessionData.user);
@@ -33,14 +40,17 @@ export function useAuth() {
           });
           
           if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (isMounted && syncData.floki !== undefined) {
-              setFlokiBalance(syncData.floki);
+            const syncContentType = syncRes.headers.get("content-type");
+            if (syncContentType && syncContentType.includes("application/json")) {
+              const syncData = await syncRes.json();
+              if (isMounted && syncData.floki !== undefined) {
+                setFlokiBalance(syncData.floki);
+              }
             }
           }
         }
       } catch (error) {
-        console.error("Failed to sync session", error);
+        console.error("Failed to sync session:", error);
       } finally {
         if (isMounted) setLoading(false);
       }
