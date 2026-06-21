@@ -224,8 +224,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 24,
+    paddingTop: 48,
   },
   title: {
     fontSize: 48,
