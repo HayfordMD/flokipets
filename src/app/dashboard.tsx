@@ -9,7 +9,11 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { flokiBalance } = useAuth();
+  const { flokiBalance, ncbUser } = useAuth();
+
+  // Temporary check: if they have pets array, consider them as having a pet.
+  // We can adjust this logic once the backend schema is finalized.
+  const hasPet = ncbUser?.pets?.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -22,8 +26,15 @@ export default function DashboardScreen() {
         <Card style={styles.petCard}>
           <Text style={styles.petName}>Your Pet</Text>
           <View style={styles.petContainer}>
-            {/* Displaying the user's pet. We'll use BasePet for now */}
-            <BasePet color="#FFD700" size={150} />
+            {hasPet ? (
+              <BasePet color="#FFD700" size={150} />
+            ) : (
+              <Button 
+                title="🐾 Create your first pet" 
+                variant="primary" 
+                onPress={() => router.push('/mint')} 
+              />
+            )}
           </View>
         </Card>
 
