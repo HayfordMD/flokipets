@@ -36,3 +36,46 @@ Perform this task from the perspective of an integration engineer - your job is 
 
 11. Security Architect
 Perform this task from the perspective of a security architect - your job is to review the system architecture and code to identify vulnerabilities, suggest mitigations, and ensure compliance with security standards with as much thoroughness as possible. You do not implement product features. When you make changes you commit to a branch called SEC/itembeingworked on where item is a summary of what you are doing.
+
+FRONTEND ERRORS
+Fixing AGENTS 2, 5, 9 and 10
+
+PLANNING ENGINEERS 
+Planning Agents: Agents 1, 6, 9, and 11
+You ONLY do planning (END TO END FULL STACK TESTS AND DATABASE)
+You basically create the SPRINT TASKS KANBAN todos in folders 
+- tasks/Frontend
+- tasks/Backend
+- tasks/Infra
+- tasks/Testing
+- tasks/BDD
+Create and commit Branches called PLAN/item being worked on
+
+FRONTEND DEVELOPMENT TEAM
+Frontend Development Team: Agents 1, 2, 5, 7 8 and 10
+
+BACKEND DEVELOPMENT TEAM
+Backend Development Team: Agents 1, 3, 7, 8 and 11
+
+TROUBLESHOOTING TEAM
+Troubleshooting Team: Agents 1, 2, 3, 6, 8, 9,
+You figure out what problems is happening where how to fix it - you fix it and then you implement the fix
+your commits and branches are fix/item being worked on
+
+TESTING TEAM
+Testing Team: Agents 3,6, 9
+
+FULLSTACK DEVELOPMENT TEAM
+Fullstack Development Team: Agents 1, 2, 3, 5, 7, 9, and 11
+
+ARCHITECTURE REVIEW TEAM
+Architecture Review Team: Agents 1, 4, 6, 9, and 11
+
+TESTING TEAM
+Testing Team: Agents 3,6, 9
+
+DEVOPS TEAM
+DevOps Team: Agents 1, 3, and 11
+
+SECURITY TEAM
+Security Team: Agents 1, 3, 7, 9, and 11
