@@ -40,6 +40,13 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // Redirect to dashboard if logged in
+  useEffect(() => {
+    if (ncbUser || activeAccount) {
+      router.replace('/dashboard');
+    }
+  }, [ncbUser, activeAccount, router]);
+
   const handleEmailAuth = async () => {
     console.log("Auth button clicked!", { isSignUp, email: email ? "provided" : "empty", password: password ? "provided" : "empty" });
     
