@@ -42,9 +42,14 @@
     "thirdweb": "^5.120.1"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^14.0.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
+    "jest": "^30.4.2",
+    "jest-expo": "^56.0.5",
     "typescript": "~6.0.3"
   },
   "scripts": {
