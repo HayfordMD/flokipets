@@ -43,6 +43,18 @@ export async function POST(req: Request) {
       })
     });
 
+    // Trigger SES Email Lambda asynchronously
+    if (process.env.SEND_SIGNUP_EMAIL_URL) {
+      fetch(process.env.SEND_SIGNUP_EMAIL_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: user.id,
+          wallet_address: wallet_address || null,
+        }),
+      }).catch(err => console.error("Failed to trigger signup email Lambda:", err));
+    }
+
     return new Response(JSON.stringify({ success: true, floki: flokiReward }), { status: 200 });
   } else {
     // User exists. Check if we need to award the 500 FLOKI wallet linking bonus

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, TextInput } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
@@ -19,41 +19,76 @@ type Providers = { email?: boolean; google?: boolean; emailOTP?: boolean };
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [providers, setProviders] = useState<Providers | null>(null);
-  const { isOffChain, flokiBalance, ncbUser, activeAccount } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [providers, setProviders] = useState<Providers>({});
+  const { activeAccount, ncbUser, isOffChain, flokiBalance } = useAuth();
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      fetch("/api/auth-providers")
+      fetch("/api/auth/providers")
         .then(res => res.json())
         .then(data => setProviders(data.providers || {}))
-        .catch(() => setProviders({ google: true }));
+        .catch(() => setProviders({ email: true }));
     } else {
-      setProviders({ google: true });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProviders({ email: true });
     }
   }, []);
 
-  const handleGoogleLogin = async () => {
-    if (Platform.OS === 'web') {
-      try {
-        const callbackURL = window.location.origin + "/auth/callback";
-        const res = await fetch("/api/auth/sign-in/social", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider: "google", callbackURL })
-        });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          console.error("No redirect URL returned:", data);
-        }
-      } catch (error) {
-        console.error("Google login failed:", error);
+  const handleEmailAuth = async () => {
+    console.log("Auth button clicked!", { isSignUp, email: email ? "provided" : "empty", password: password ? "provided" : "empty" });
+    
+    if (!email || !password) {
+      console.log("Early return: missing email or password");
+      setAuthError('Email and password are required');
+      return;
+    }
+    if (isSignUp && !name) {
+      console.log("Early return: missing name for signup");
+      setAuthError('Name is required for sign up');
+      return;
+    }
+    
+    setAuthLoading(true);
+    setAuthError('');
+    
+    try {
+      const endpoint = isSignUp ? '/api/auth/sign-up/email' : '/api/auth/sign-in/email';
+      const body = isSignUp 
+        ? JSON.stringify({ email, password, name })
+        : JSON.stringify({ email, password });
+
+      console.log(`Sending POST request to ${endpoint}`);
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body
+      });
+      
+      console.log("Response received with status:", res.status);
+      const data = await res.json();
+      console.log("Response data:", data);
+      
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Authentication failed');
       }
-    } else {
-      alert("Google login is currently fully supported on web. Mobile implementation pending backend deep link proxy setup.");
+      
+      console.log("Auth successful!");
+      if (Platform.OS === 'web') {
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error("Email auth failed:", error);
+      setAuthError(error.message);
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -69,7 +104,6 @@ export default function HomeScreen() {
           <Text style={styles.title}>FlokiPets</Text>
         )}
         
-        <Text style={styles.subtitle}>Your Web3 Companion</Text>
 
         {isOffChain && (
           <View style={{ backgroundColor: '#FFFBEA', padding: 12, borderRadius: 8, marginBottom: 16, borderColor: '#F59E0B', borderWidth: 1, width: '100%', maxWidth: 400 }}>
@@ -82,42 +116,82 @@ export default function HomeScreen() {
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>Welcome back!</Text>
           <Text style={styles.cardText}>
-            Connect your wallet or sign in with Google to start earning.
+            Connect your wallet or sign in to start earning.
           </Text>
-
-          {/* SVG GENERATOR DEMO */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 16, gap: 10 }}>
-            <BasePet color="#FFB84D" size={80} />
-            <BasePet color="#4ADE80" size={80} />
-            <BasePet color="#60A5FA" size={80} />
-          </View>
-          <Text style={{ fontSize: 13, color: '#3B82F6', textAlign: 'center', marginBottom: 20 }}>
-            Look! 3 completely different colored pets generated from the exact same SVG code component!
-          </Text>
-
-          {/* Dev Shortcut to Sandbox */}
-          <View style={{ marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB', width: '100%', alignItems: 'center' }}>
-            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Developer Tools</Text>
-            <Link href="/testpets" style={{ padding: 12, backgroundColor: '#3B82F6', borderRadius: 20, overflow: 'hidden', color: 'white', fontWeight: 'bold' }}>
-              Open Pet Sandbox
-            </Link>
-          </View>
 
           {(ncbUser || activeAccount) && (
-            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10B981', marginBottom: 16 }}>
-              {flokiBalance} FLOKI
-            </Text>
+            <View style={{ width: '100%', alignItems: 'center' }}>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#10B981', marginBottom: 16 }}>
+                {flokiBalance} FLOKI
+              </Text>
+              
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                <Button title="🐾 Mint a Pet" variant="primary" onPress={() => router.push('/mint')} />
+                <Button title="🛒 Enter Store" variant="secondary" onPress={() => router.push('/store')} />
+              </View>
+            </View>
           )}
           
-          <View style={{ marginBottom: 16, width: '100%' }}>
-            <Button 
-              title="Sign in with Google" 
-              onPress={handleGoogleLogin} 
-            />
-            <Text style={{ fontSize: 13, color: '#1E3A8A', textAlign: 'center', marginTop: 8, fontWeight: '500' }}>
-              You will still earn FLOKI but must claim it to your wallet later.
-            </Text>
-          </View>
+          {/* Email Authentication Form */}
+          {(!ncbUser && !activeAccount) && (
+            <View style={{ marginBottom: 16, width: '100%', padding: 16, backgroundColor: '#F3F4F6', borderRadius: 12 }}>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#1F2937', textAlign: 'center' }}>
+                {isSignUp ? 'Create an Account' : 'Sign In with Email'}
+              </Text>
+              
+              {authError ? (
+                <Text style={{ color: '#EF4444', marginBottom: 12, textAlign: 'center', fontSize: 14 }}>{authError}</Text>
+              ) : null}
+
+              {isSignUp && (
+                <TextInput 
+                  placeholder="Full Name" 
+                  value={name} 
+                  onChangeText={setName} 
+                  style={{ width: '100%', padding: 12, marginBottom: 10, borderRadius: 8, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: 'white' }}
+                />
+              )}
+              
+              <TextInput 
+                placeholder="Email Address" 
+                value={email} 
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={{ width: '100%', padding: 12, marginBottom: 10, borderRadius: 8, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: 'white' }}
+              />
+              
+              <TextInput 
+                placeholder="Password" 
+                value={password} 
+                onChangeText={setPassword}
+                secureTextEntry
+                style={{ width: '100%', padding: 12, marginBottom: 12, borderRadius: 8, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: 'white' }}
+              />
+
+              <Button 
+                title={authLoading ? "Loading..." : (isSignUp ? "Sign Up" : "Sign In")} 
+                onPress={handleEmailAuth}
+                disabled={authLoading}
+              />
+              
+              <View style={{ marginTop: 12, alignItems: 'center' }}>
+                <Text style={{ color: '#6B7280', fontSize: 14 }}>
+                  {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
+                  <Text 
+                    style={{ color: '#3B82F6', fontWeight: 'bold', cursor: 'pointer' }} 
+                    onPress={() => setIsSignUp(!isSignUp)}
+                  >
+                    {isSignUp ? "Sign In" : "Sign Up"}
+                  </Text>
+                </Text>
+              </View>
+
+              <Text style={{ fontSize: 12, color: '#6B7280', textAlign: 'center', marginTop: 16 }}>
+                You will still earn FLOKI but must claim it to your wallet later.
+              </Text>
+            </View>
+          )}
 
           <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
             <ConnectButton
@@ -126,6 +200,14 @@ export default function HomeScreen() {
               theme={"light"}
               connectModal={{ size: "wide" }}
             />
+          </View>
+          
+          {/* Dev Shortcut to Sandbox */}
+          <View style={{ marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB', width: '100%', alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Developer Tools</Text>
+            <Link href="/testpets" style={{ padding: 12, backgroundColor: '#3B82F6', borderRadius: 20, overflow: 'hidden', color: 'white', fontWeight: 'bold' }}>
+              Open Pet Sandbox
+            </Link>
           </View>
         </Card>
       </View>

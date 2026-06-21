@@ -49,7 +49,7 @@ export function useAuth() {
     syncSession();
 
     return () => { isMounted = false; };
-  }, [activeAccount?.address]); // re-run if wallet address changes
+  }, [activeAccount, activeAccount?.address]); // re-run if wallet address changes
 
   return { 
     activeAccount, 

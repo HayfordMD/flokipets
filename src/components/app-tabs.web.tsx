@@ -6,14 +6,17 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
+import { Link } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet, Platform } from 'react-native';
+import React, { useState } from 'react';
 
 import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AppTabs() {
   return (
@@ -21,11 +24,8 @@ export default function AppTabs() {
       <TabSlot style={{ height: '100%' }} />
       <TabList asChild>
         <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
+          <TabTrigger name="index" href="/" asChild>
             <TabButton>Home</TabButton>
-          </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -50,26 +50,55 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const { ncbUser, activeAccount } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/sign-out', { method: 'POST' });
+      if (Platform.OS === 'web') {
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+          FlokiPets
         </ThemedText>
 
         {props.children}
 
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
+        {ncbUser ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: Spacing.three, gap: Spacing.two, position: 'relative', zIndex: 50 }}>
+            <Pressable onPress={() => setIsDropdownOpen(!isDropdownOpen)} style={{ padding: 4 }}>
+              <ThemedText type="smallBold">👤 {ncbUser.name ? ncbUser.name.split(' ')[0] : ncbUser.email}</ThemedText>
+            </Pressable>
+            {isDropdownOpen && (
+              <View style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, backgroundColor: colors.background, padding: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, minWidth: 100, zIndex: 100 }}>
+                <Pressable onPress={handleLogout} style={{ padding: 8 }}>
+                  <ThemedText type="link">Logout</ThemedText>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ) : activeAccount ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: Spacing.three }}>
+            <ThemedText type="smallBold">👛 {activeAccount.address.slice(0, 6)}...{activeAccount.address.slice(-4)}</ThemedText>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: Spacing.three }}>
+            <Link href="/" asChild>
+              <Pressable style={{ padding: 4 }}>
+                <ThemedText type="smallBold" style={{ color: '#3B82F6' }}>Sign In / Sign Up</ThemedText>
+              </Pressable>
+            </Link>
+          </View>
+        )}
       </ThemedView>
     </View>
   );

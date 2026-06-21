@@ -48,9 +48,12 @@ async function proxyRequest(req: Request, path: string, body?: string) {
   const responseHeaders = new Headers();
   responseHeaders.set("Content-Type", "application/json");
 
-  // Forward Set-Cookie from NoCodeBackend to client exactly as is
+  // Forward Set-Cookie from NoCodeBackend to client exactly as is, 
+  // BUT strip the Domain attribute so the browser accepts it on localhost.
   const setCookies = res.headers.getSetCookie?.() || [];
-  for (const c of setCookies) {
+  for (let c of setCookies) {
+    // Remove "Domain=app.nocodebackend.com;" or similar
+    c = c.replace(/Domain=[^;]+;?\s*/gi, '');
     responseHeaders.append("Set-Cookie", c);
   }
 

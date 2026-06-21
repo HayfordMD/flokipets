@@ -4,6 +4,7 @@ import { ThirdwebProvider } from 'thirdweb/react';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { TopNavBar } from '@/components/TopNavBar';
 import SlotMachine from '@/features/games/SlotMachine';
 import '../global.css';
 

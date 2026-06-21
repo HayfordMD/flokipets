@@ -19,9 +19,9 @@ export default function SlotMachine() {
   const betAmount = BET_INCREMENTS[betIndex];
 
   // Animation values for reels
-  const reel1Anim = useRef(new Animated.Value(0)).current;
-  const reel2Anim = useRef(new Animated.Value(0)).current;
-  const reel3Anim = useRef(new Animated.Value(0)).current;
+  const [reel1Anim] = useState(() => new Animated.Value(0));
+  const [reel2Anim] = useState(() => new Animated.Value(0));
+  const [reel3Anim] = useState(() => new Animated.Value(0));
 
   const handleDecreaseBet = () => {
     if (betIndex > 0) setBetIndex(betIndex - 1);
@@ -144,9 +144,9 @@ export default function SlotMachine() {
               outputRange: [0, 200], // Will loop by wrapping in UI
             });
             return (
-              <View key={i} style={styles.reelWrapper}>
+              <Animated.View key={i} style={[styles.reelWrapper, { transform: [{ translateY }] }]}>
                 <Text style={styles.symbol}>{symbol}</Text>
-              </View>
+              </Animated.View>
             );
           })}
         </View>

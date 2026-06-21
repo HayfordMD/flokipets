@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ComposedPet } from '@/components/pets/ComposedPet';
 import { PetTraits, BodyVariant, EyesVariant, EarsVariant, NoseMouthVariant, LimbsVariant } from '@/components/pets/types';
 
@@ -11,6 +12,7 @@ const NOSES: NoseMouthVariant[] = ['smile', 'dog', 'surprised'];
 const LIMBS: LimbsVariant[] = ['stubby', 'long', 'none'];
 
 export default function TestPetsScreen() {
+  const router = useRouter();
   const [traits, setTraits] = useState<PetTraits>({
     body: 'blob',
     eyes: 'happy',
@@ -58,7 +60,12 @@ export default function TestPetsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Pet Studio Sandbox</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Text style={{ fontSize: 24, color: '#3B82F6', fontWeight: 'bold' }}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Pet Studio Sandbox</Text>
+        </View>
         <TouchableOpacity style={styles.randomButton} onPress={randomize}>
           <Text style={styles.randomButtonText}>🎲 Randomize</Text>
         </TouchableOpacity>
