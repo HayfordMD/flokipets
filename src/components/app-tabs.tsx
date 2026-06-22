@@ -37,7 +37,6 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       {/* Hidden tabs for pushable screens */}
-      <NativeTabs.Trigger name="shop" />
       <NativeTabs.Trigger name="game" />
       <NativeTabs.Trigger name="marketplace" />
       <NativeTabs.Trigger name="friends" />

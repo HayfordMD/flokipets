@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { ThirdwebProvider } from 'thirdweb/react';
+import { ThirdwebProvider, AutoConnect } from 'thirdweb/react';
+import { client, appWallets } from '@/lib/thirdweb';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
@@ -21,6 +22,7 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <ThirdwebProvider>
+        <AutoConnect client={client} wallets={appWallets} />
         <AnimatedSplashOverlay />
         <AppTabs />
       </ThirdwebProvider>

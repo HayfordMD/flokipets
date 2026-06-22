@@ -1,30 +1,37 @@
 import { getSessionUser, extractAuthCookies, CONFIG } from "../../lib/ncb-utils";
 
 export async function POST(req: Request) {
+  const { wallet_address } = await req.json().catch(() => ({ wallet_address: null }));
   const user = await getSessionUser(req.headers.get("cookie"));
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  
+  if (!user && !wallet_address) {
+    return new Response(JSON.stringify({ error: "Unauthorized: No user session or wallet" }), { status: 401 });
   }
 
-  const { wallet_address } = await req.json().catch(() => ({ wallet_address: null }));
   const authCookies = extractAuthCookies(req.headers.get("cookie"));
+  const effectiveUserId = user?.id || wallet_address; // Fallback to wallet address if Web3-only
 
-  // 1. Fetch current user record
-  const readUrl = `${CONFIG.dataApiUrl}/read/users?Instance=${CONFIG.instance}`;
+  // 1. Fetch current user record (by NCB user ID or Wallet Address)
+  const queryField = user ? "user_id" : "wallet_address";
+  const queryValue = user ? user.id : wallet_address;
+  
+  const readUrl = `${CONFIG.dataApiUrl}/query/users?${queryField}=${queryValue}&Instance=${CONFIG.instance}`;
   const readRes = await fetch(readUrl, {
+    method: "POST",
     headers: {
       "X-Database-Instance": CONFIG.instance,
       "Cookie": authCookies,
     }
   });
 
-  const records = await readRes.json();
-  const dbUser = Array.isArray(records) && records.length > 0 ? records[0] : null;
+  let dbUser = null;
+  if (readRes.ok) {
+    const records = await readRes.json();
+    dbUser = Array.isArray(records) && records.length > 0 ? records[0] : null;
+  }
 
   if (!dbUser) {
     // Create new user record
-    // +5 FLOKI for initial login
-    // +500 FLOKI if they also linked a wallet immediately
     const flokiReward = 5 + (wallet_address ? 500 : 0);
 
     const createUrl = `${CONFIG.dataApiUrl}/create/users?Instance=${CONFIG.instance}`;
@@ -33,11 +40,12 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/json",
         "X-Database-Instance": CONFIG.instance,
-        "Cookie": authCookies,
+        // Don't forward empty cookies for web3-only creations
+        ...(authCookies ? { "Cookie": authCookies } : {})
       },
       body: JSON.stringify({
-        id: user.id,
-        user_id: user.id,
+        id: effectiveUserId,
+        user_id: effectiveUserId,
         wallet_address: wallet_address || null,
         off_chain_floki: flokiReward,
       })

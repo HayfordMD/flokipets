@@ -33,7 +33,6 @@ export default function AppTabs() {
           
           {/* Hidden triggers for other routes so Expo Router doesn't redirect to index */}
           <View style={{ display: 'none' }}>
-            <TabTrigger name="shop" href="/shop" />
             <TabTrigger name="games" href="/games" />
             <TabTrigger name="marketplace" href="/marketplace" />
             <TabTrigger name="friends" href="/friends" />
@@ -80,8 +79,9 @@ export function CustomTabList(props: TabListProps) {
 
   const pathname = usePathname();
   const isSignInPage = pathname === '/' && !ncbUser && !activeAccount;
+  const isDashboardPage = pathname === '/dashboard';
 
-  if (isSignInPage) {
+  if (isSignInPage || isDashboardPage) {
     return null;
   }
 

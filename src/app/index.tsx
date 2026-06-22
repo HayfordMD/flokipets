@@ -6,15 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConnectButton } from "thirdweb/react";
-import { client } from '@/lib/thirdweb';
-import { createWallet } from "thirdweb/wallets";
+import { client, appWallets } from '@/lib/thirdweb';
+import { ACTIVE_CHAIN } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { BasePet } from '@/components/pets/BasePet';
-
-const wallets = [
-  createWallet("io.metamask"),
-  createWallet("com.walletconnect"),
-];
 
 type Providers = { email?: boolean; google?: boolean; emailOTP?: boolean };
 
@@ -233,7 +228,11 @@ export default function HomeScreen() {
           <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
             <ConnectButton
               client={client}
-              wallets={wallets}
+              wallets={appWallets}
+              accountAbstraction={{
+                chain: ACTIVE_CHAIN,
+                sponsorGas: true,
+              }}
               theme={"light"}
               connectModal={{ size: "wide" }}
             />

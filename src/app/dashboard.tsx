@@ -6,10 +6,21 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { BasePet } from '@/components/pets/BasePet';
 import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { Platform, Pressable } from 'react-native';
+import { ConnectButton } from "thirdweb/react";
+import { client, appWallets } from '@/lib/thirdweb';
+import { ACTIVE_CHAIN, MAX_OFFCHAIN_FLOKI } from "@/lib/constants";
+import { useFlokiBalance } from '@/hooks/useFlokiBalance';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { flokiBalance, ncbUser, loading, activeAccount } = useAuth();
+  const { flokiBalance: petFloki, ncbUser, loading, activeAccount } = useAuth();
+  const { formattedBalance: onChainFloki, isLoading: isBalanceLoading } = useFlokiBalance();
+  const { flokiBalance, ncbUser: ncbUserAuth, loading: loadingAuth, activeAccount: activeAccountAuth } = useAuth(); // kept for compatibility if needed elsewhere, but using destructured above
+
+  const displayBalance = activeAccount ? (isBalanceLoading ? "..." : onChainFloki) : petFloki;
+  const isLimitReached = !activeAccount && petFloki >= MAX_OFFCHAIN_FLOKI;
 
   React.useEffect(() => {
     console.log("Dashboard screen mounted! Current User:", ncbUser);
@@ -22,6 +33,21 @@ export default function DashboardScreen() {
   // Temporary check: if they have pets array, consider them as having a pet.
   // We can adjust this logic once the backend schema is finalized.
   const hasPet = ncbUser?.pets?.length > 0;
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
+      if (Platform.OS === 'web') {
+        window.location.reload();
+      } else {
+        router.replace('/');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -36,11 +62,20 @@ export default function DashboardScreen() {
             <Text style={styles.title}>Dashboard</Text>
             <Text style={{fontSize: 16, color: '#1E3A8A', fontWeight: 'bold'}}>Level 1 • Novice</Text>
           </View>
-          <Text style={styles.balanceText}>{flokiBalance} FLOKI</Text>
+          <View style={{alignItems: 'flex-end'}}>
+            <Text style={styles.balanceText}>{displayBalance} {activeAccount ? 'FLOKI' : 'Pet-Floki'}</Text>
+            {activeAccount && <Text style={{fontSize: 10, color: '#10B981'}}>On-Chain (opBNB)</Text>}
+          </View>
         </View>
 
+        {isLimitReached && (
+          <View style={{ backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#F87171', width: '100%', maxWidth: 400 }}>
+            <Text style={{ color: '#DC2626', fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>⚠️ Pet-Floki Limit Reached!</Text>
+            <Text style={{ color: '#991B1B', fontSize: 14 }}>You have reached the maximum off-chain limit of {MAX_OFFCHAIN_FLOKI} Pet-Floki. Connect a wallet to continue earning and claim your tokens.</Text>
+          </View>
+        )}
+
         <Card style={styles.petCard}>
-          <Text style={styles.petName}>Your Pet</Text>
           <View style={styles.petContainer}>
             {hasPet ? (
               <View style={{alignItems: 'center', width: '100%'}}>
@@ -71,13 +106,6 @@ export default function DashboardScreen() {
         </Card>
 
         <View style={styles.navigationGrid}>
-          <View style={styles.navItem}>
-            <Button 
-              title="🛍 Shop" 
-              variant="primary" 
-              onPress={() => router.push('/shop')} 
-            />
-          </View>
           <View style={styles.navItem}>
             <Button 
               title="🎮 Games" 
@@ -113,6 +141,38 @@ export default function DashboardScreen() {
               onPress={() => router.push('/inventory')} 
             />
           </View>
+        </View>
+
+        {/* Settings Gear Menu */}
+        <View style={{ marginTop: 32, alignItems: 'center', width: '100%', position: 'relative' }}>
+          <Pressable 
+            onPress={() => setIsMenuOpen(!isMenuOpen)}
+            style={{ padding: 12, backgroundColor: 'white', borderRadius: 50, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 }}
+          >
+            <Text style={{ fontSize: 24 }}>⚙️</Text>
+          </Pressable>
+
+          {isMenuOpen && (
+            <View style={{ position: 'absolute', bottom: 60, backgroundColor: 'white', padding: 16, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5, width: 250, alignItems: 'center', zIndex: 100 }}>
+              {!activeAccount && (
+                <View style={{ marginBottom: 16, width: '100%', alignItems: 'center' }}>
+                  <ConnectButton
+                    client={client}
+                    wallets={appWallets}
+                    accountAbstraction={{
+                      chain: ACTIVE_CHAIN,
+                      sponsorGas: true,
+                    }}
+                    theme={"light"}
+                    connectModal={{ size: "wide" }}
+                  />
+                </View>
+              )}
+              <Pressable onPress={handleLogout} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#EF4444', borderRadius: 8, width: '100%' }}>
+                <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center', fontSize: 16 }}>LOGOUT</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </ScrollView>
       )}
