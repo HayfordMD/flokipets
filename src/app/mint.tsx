@@ -18,7 +18,7 @@ export default function MintScreen() {
 
   const fetchPets = async () => {
     try {
-      const res = await fetch("/api/data/read/pets");
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/data/read/pets`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setPets(data);
@@ -50,7 +50,7 @@ export default function MintScreen() {
     setError('');
 
     try {
-      const res = await fetch("/api/pets/mint", {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/pets/mint`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ petName: petName.trim() })

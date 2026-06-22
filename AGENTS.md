@@ -50,6 +50,7 @@ You basically create the SPRINT TASKS KANBAN todos in folders
 - tasks/Testing
 - tasks/BDD
 Create and commit Branches called PLAN/item being worked on
+once you have finished creating your task you commit and push merge into master. and then change branchs backj to master
 
 FRONTEND DEVELOPMENT TEAM
 Frontend Development Team: Agents 1, 2, 5, 7 8 and 10
@@ -61,6 +62,7 @@ TROUBLESHOOTING TEAM
 Troubleshooting Team: Agents 1, 2, 3, 6, 8, 9,
 You figure out what problems is happening where how to fix it - you fix it and then you implement the fix
 your commits and branches are fix/item being worked on
+once you have finished creating your task you commit and push merge into master. and then change branchs backj to master
 
 TESTING TEAM
 Testing Team: Agents 3,6, 9

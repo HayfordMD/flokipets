@@ -27,6 +27,21 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="dashboard">
+        <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/home.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
+      {/* Hidden tabs for pushable screens */}
+      <NativeTabs.Trigger name="shop" />
+      <NativeTabs.Trigger name="game" />
+      <NativeTabs.Trigger name="marketplace" />
+      <NativeTabs.Trigger name="friends" />
+      <NativeTabs.Trigger name="bank" />
     </NativeTabs>
   );
 }

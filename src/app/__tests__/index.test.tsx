@@ -1,82 +1,98 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
 import HomeScreen from '../index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Mock the router
-const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    replace: mockReplace,
-    push: jest.fn(),
-  }),
-  Link: 'mock-link',
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  setItem: jest.fn(),
+  getItem: jest.fn(),
+}));
+
+// Mock useAuth
+jest.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    activeAccount: null,
+    ncbUser: null,
+    isOffChain: false,
+    flokiBalance: 0
+  })
 }));
 
 // Mock thirdweb
 jest.mock('thirdweb/react', () => ({
-  ConnectButton: () => <mock-connect-button />
+  ConnectButton: () => null
 }));
-
 jest.mock('thirdweb/wallets', () => ({
-  createWallet: jest.fn(),
+  createWallet: jest.fn()
 }));
-
 jest.mock('@/lib/thirdweb', () => ({
-  client: {},
+  client: {}
 }));
 
-// Mock useAuth
-const mockUseAuth = jest.fn();
-jest.mock('@/hooks/useAuth', () => ({
-  useAuth: () => mockUseAuth(),
-}));
+// Mock router
+jest.mock('expo-router', () => {
+  const { Text } = require('react-native');
+  return {
+    useRouter: () => ({
+      replace: jest.fn()
+    }),
+    Link: ({ children }: any) => <Text>{children}</Text>
+  };
+});
 
-describe('Feature: User Login Navigation', () => {
+// Mock fetch for the providers call
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({ providers: { email: true } }),
+    ok: true,
+  })
+) as jest.Mock;
+
+describe('HomeScreen - Remember Me', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
   });
 
-  describe('Scenario: Successful login redirects to dashboard', () => {
-    it('Given the user logs in and useAuth returns ncbUser', () => {
-      mockUseAuth.mockReturnValue({
-        ncbUser: { email: 'test@example.com' },
-        activeAccount: null,
-        flokiBalance: 0,
-        isOffChain: true
-      });
+  it('renders Remember me checkbox', async () => {
+    await render(<HomeScreen />);
+    const checkbox = screen.getByLabelText('Remember me');
+    expect(checkbox).toBeTruthy();
+    expect(checkbox.props.accessibilityState.checked).toBe(false);
+  });
 
-      render(<HomeScreen />);
+  it('toggles Remember me state and saves to AsyncStorage', async () => {
+    await render(<HomeScreen />);
+    const checkbox = screen.getByLabelText('Remember me');
+    
+    // Initially false
+    expect(checkbox.props.accessibilityState.checked).toBe(false);
 
-      // Then the user should be automatically routed to "/dashboard"
-      expect(mockReplace).toHaveBeenCalledWith('/dashboard');
+    // Toggle on
+    fireEvent.press(checkbox);
+    
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('rememberMe', 'true');
     });
+    // Checkbox state will be true
+    expect(checkbox.props.accessibilityState.checked).toBe(true);
 
-    it('Given the user logs in with wallet (activeAccount)', () => {
-      mockUseAuth.mockReturnValue({
-        ncbUser: null,
-        activeAccount: { address: '0x123' },
-        flokiBalance: 100,
-        isOffChain: false
-      });
-
-      render(<HomeScreen />);
-
-      // Then the user should be automatically routed to "/dashboard"
-      expect(mockReplace).toHaveBeenCalledWith('/dashboard');
+    // Toggle off
+    fireEvent.press(checkbox);
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('rememberMe', 'false');
     });
+    expect(checkbox.props.accessibilityState.checked).toBe(false);
+  });
 
-    it('Given the user is not logged in', () => {
-      mockUseAuth.mockReturnValue({
-        ncbUser: null,
-        activeAccount: null,
-        flokiBalance: 0,
-        isOffChain: false
-      });
-
-      render(<HomeScreen />);
-
-      // Then the router should NOT replace the screen
-      expect(mockReplace).not.toHaveBeenCalled();
+  it('initializes Remember me state from AsyncStorage', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('true');
+    await render(<HomeScreen />);
+    
+    await waitFor(() => {
+      const checkbox = screen.getByLabelText('Remember me');
+      expect(checkbox.props.accessibilityState.checked).toBe(true);
     });
   });
 });

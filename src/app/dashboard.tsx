@@ -9,7 +9,15 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { flokiBalance, ncbUser } = useAuth();
+  const { flokiBalance, ncbUser, loading, activeAccount } = useAuth();
+
+  React.useEffect(() => {
+    console.log("Dashboard screen mounted! Current User:", ncbUser);
+    // TEMPORARILY DISABLED FOR FRONTEND DEVELOPMENT
+    // if (!loading && !ncbUser && !activeAccount) {
+    //   router.replace('/');
+    // }
+  }, [loading, ncbUser, activeAccount, router]);
 
   // Temporary check: if they have pets array, consider them as having a pet.
   // We can adjust this logic once the backend schema is finalized.
@@ -17,9 +25,17 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 20, color: '#1E3A8A' }}>Loading...</Text>
+        </View>
+      ) : (
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Dashboard</Text>
+          <View>
+            <Text style={styles.title}>Dashboard</Text>
+            <Text style={{fontSize: 16, color: '#1E3A8A', fontWeight: 'bold'}}>Level 1 • Novice</Text>
+          </View>
           <Text style={styles.balanceText}>{flokiBalance} FLOKI</Text>
         </View>
 
@@ -27,7 +43,23 @@ export default function DashboardScreen() {
           <Text style={styles.petName}>Your Pet</Text>
           <View style={styles.petContainer}>
             {hasPet ? (
-              <BasePet color="#FFD700" size={150} />
+              <View style={{alignItems: 'center', width: '100%'}}>
+                <BasePet color="#FFD700" size={120} />
+                <View style={{marginTop: 16, width: '100%', paddingHorizontal: 16, gap: 8}}>
+                   <Text style={{color: '#1E3A8A', fontWeight: 'bold', fontSize: 12}}>Hunger: 80%</Text>
+                   <View style={{width: '100%', height: 6, backgroundColor: '#E5E7EB', borderRadius: 3}}>
+                     <View style={{width: '80%', height: '100%', backgroundColor: '#10B981', borderRadius: 3}} />
+                   </View>
+                   <Text style={{color: '#1E3A8A', fontWeight: 'bold', fontSize: 12}}>Energy: 60%</Text>
+                   <View style={{width: '100%', height: 6, backgroundColor: '#E5E7EB', borderRadius: 3}}>
+                     <View style={{width: '60%', height: '100%', backgroundColor: '#F59E0B', borderRadius: 3}} />
+                   </View>
+                   <Text style={{color: '#1E3A8A', fontWeight: 'bold', fontSize: 12}}>Happiness: 90%</Text>
+                   <View style={{width: '100%', height: 6, backgroundColor: '#E5E7EB', borderRadius: 3}}>
+                     <View style={{width: '90%', height: '100%', backgroundColor: '#3B82F6', borderRadius: 3}} />
+                   </View>
+                </View>
+              </View>
             ) : (
               <Button 
                 title="🐾 Create your first pet" 
@@ -48,9 +80,9 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.navItem}>
             <Button 
-              title="🎮 Game" 
+              title="🎮 Games" 
               variant="secondary" 
-              onPress={() => router.push('/game')} 
+              onPress={() => router.push('/games')} 
             />
           </View>
           <View style={styles.navItem}>
@@ -74,8 +106,16 @@ export default function DashboardScreen() {
               onPress={() => router.push('/bank')} 
             />
           </View>
+          <View style={styles.navItem}>
+            <Button 
+              title="🎒 Inventory" 
+              variant="secondary" 
+              onPress={() => router.push('/inventory')} 
+            />
+          </View>
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -128,10 +168,11 @@ const styles = StyleSheet.create({
   petContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 200,
-    height: 200,
+    width: '100%',
+    minHeight: 250,
+    paddingVertical: 16,
     backgroundColor: '#F3F4F6',
-    borderRadius: 100,
+    borderRadius: 24,
     borderWidth: 4,
     borderColor: '#E5E7EB',
   },

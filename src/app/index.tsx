@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Platform, TextInput, Pressable } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
@@ -23,14 +24,27 @@ export default function HomeScreen() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('rememberMe').then((val) => {
+      if (val === 'true') setRememberMe(true);
+    });
+  }, []);
+
+  const toggleRememberMe = async () => {
+    const newValue = !rememberMe;
+    setRememberMe(newValue);
+    await AsyncStorage.setItem('rememberMe', String(newValue));
+  };
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [providers, setProviders] = useState<Providers>({});
-  const { activeAccount, ncbUser, isOffChain, flokiBalance } = useAuth();
+  const { activeAccount, ncbUser, isOffChain, flokiBalance, loading: authHookLoading } = useAuth();
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      fetch("/api/auth/providers")
+      fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/providers`)
         .then(res => res.json())
         .then(data => setProviders(data.providers || {}))
         .catch(() => setProviders({ email: true }));
@@ -42,10 +56,10 @@ export default function HomeScreen() {
 
   // Redirect to dashboard if logged in
   useEffect(() => {
-    if (ncbUser || activeAccount) {
+    if (!authHookLoading && (ncbUser || activeAccount)) {
       router.replace('/dashboard');
     }
-  }, [ncbUser, activeAccount, router]);
+  }, [ncbUser, activeAccount, authHookLoading, router]);
 
   const handleEmailAuth = async () => {
     console.log("Auth button clicked!", { isSignUp, email: email ? "provided" : "empty", password: password ? "provided" : "empty" });
@@ -65,10 +79,11 @@ export default function HomeScreen() {
     setAuthError('');
     
     try {
-      const endpoint = isSignUp ? '/api/auth/sign-up/email' : '/api/auth/sign-in/email';
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
+      const endpoint = isSignUp ? `${baseUrl}/api/auth/sign-up/email` : `${baseUrl}/api/auth/sign-in/email`;
       const body = isSignUp 
-        ? JSON.stringify({ email, password, name })
-        : JSON.stringify({ email, password });
+        ? JSON.stringify({ email, password, name, rememberMe })
+        : JSON.stringify({ email, password, rememberMe });
 
       console.log(`Sending POST request to ${endpoint}`);
 
@@ -87,12 +102,16 @@ export default function HomeScreen() {
         throw new Error(data.message || data.error || 'Authentication failed');
       }
       
-      console.log("Auth successful!");
+      console.log("Auth successful! Attempting to navigate to /dashboard...");
       if (Platform.OS === 'web') {
+        // Force a hard navigation on web to ensure cookies and states are freshly loaded
+        console.log("Using window.location.href for web routing...");
         window.location.href = '/dashboard';
       } else {
+        console.log("Using Expo Router replace for native routing...");
         router.replace('/dashboard');
       }
+      console.log("Navigation command executed!");
     } catch (error: any) {
       console.error("Email auth failed:", error);
       setAuthError(error.message);
@@ -131,7 +150,11 @@ export default function HomeScreen() {
           {/* Replaced old dashboard view with redirect */}
           
           {/* Email Authentication Form */}
-          {(!ncbUser && !activeAccount) && (
+          {authHookLoading ? (
+            <View style={{ marginBottom: 16, width: '100%', padding: 16, alignItems: 'center' }}>
+              <Text style={{ fontSize: 16, color: '#1F2937' }}>Loading session...</Text>
+            </View>
+          ) : (!ncbUser && !activeAccount) && (
             <View style={{ marginBottom: 16, width: '100%', padding: 16, backgroundColor: '#F3F4F6', borderRadius: 12 }}>
               <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#1F2937', textAlign: 'center' }}>
                 {isSignUp ? 'Create an Account' : 'Sign In with Email'}
@@ -167,6 +190,22 @@ export default function HomeScreen() {
                 style={{ width: '100%', padding: 12, marginBottom: 12, borderRadius: 8, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: 'white' }}
               />
 
+              <Pressable 
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+                onPress={toggleRememberMe}
+                accessible={true}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: rememberMe }}
+                accessibilityLabel="Remember me"
+              >
+                <View style={[{
+                  width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white'
+                }, rememberMe && { backgroundColor: '#3B82F6', borderColor: '#3B82F6' }]}>
+                  {rememberMe && <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ color: '#4B5563', fontSize: 14 }}>Remember me</Text>
+              </Pressable>
+
               <Button 
                 title={authLoading ? "Loading..." : (isSignUp ? "Sign Up" : "Sign In")} 
                 onPress={handleEmailAuth}
@@ -200,13 +239,6 @@ export default function HomeScreen() {
             />
           </View>
           
-          {/* Dev Shortcut to Sandbox */}
-          <View style={{ marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB', width: '100%', alignItems: 'center' }}>
-            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }}>Developer Tools</Text>
-            <Link href="/testpets" style={{ padding: 12, backgroundColor: '#3B82F6', borderRadius: 20, overflow: 'hidden', color: 'white', fontWeight: 'bold' }}>
-              Open Pet Sandbox
-            </Link>
-          </View>
         </Card>
       </View>
     </SafeAreaView>

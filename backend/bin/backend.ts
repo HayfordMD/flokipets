@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib/core';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+import * as cdk from 'aws-cdk-lib';
 import { BackendStack } from '../lib/backend-stack';
 
 const app = new cdk.App();

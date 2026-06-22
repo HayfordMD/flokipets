@@ -12,7 +12,7 @@ export const TopNavBar = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/sign-out', { method: 'POST' });
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
       if (Platform.OS === 'web') {
         window.location.reload();
       }

@@ -1,11 +1,13 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, screen, cleanup, waitFor } from '@testing-library/react-native';
 import DashboardScreen from '../dashboard';
 
 // Mock the router
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockPush,
+    replace: jest.fn(),
   }),
 }));
 
@@ -16,11 +18,21 @@ jest.mock('@/hooks/useAuth', () => ({
 }));
 
 // Mock BasePet to avoid rendering complex nested SVG/components in simple tests
-jest.mock('@/components/pets/BasePet', () => ({
-  BasePet: () => <mock-base-pet testID="base-pet-mock" />
-}));
+jest.mock('@/components/pets/BasePet', () => {
+  const { View } = require('react-native');
+  return { BasePet: () => <View testID="base-pet-mock" /> };
+});
 
 describe('Feature: Dashboard Interface', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   describe('Scenario: Viewing the dashboard features with a pet', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({
@@ -29,19 +41,48 @@ describe('Feature: Dashboard Interface', () => {
       });
     });
 
-    it('Given the user is logged in and has a pet', () => {
-      const { getByText, getByTestId } = render(<DashboardScreen />);
+    it('Given the user is logged in and has a pet', async () => {
+      await render(<DashboardScreen />);
       
       // Then the user should see an image of their pet
-      expect(getByTestId('base-pet-mock')).toBeTruthy();
-      expect(getByText('Your Pet')).toBeTruthy();
+      expect(screen.getByTestId('base-pet-mock')).toBeTruthy();
+      expect(screen.getByText('Your Pet')).toBeTruthy();
+
+      // And the user should see their Pet Status and Profile
+      expect(screen.getByText('Hunger: 80%')).toBeTruthy();
+      expect(screen.getByText('Energy: 60%')).toBeTruthy();
+      expect(screen.getByText('Happiness: 90%')).toBeTruthy();
+      expect(screen.getByText('Level 1 • Novice')).toBeTruthy();
 
       // And the user should see buttons linking to various features
-      expect(getByText('🛍 Shop')).toBeTruthy();
-      expect(getByText('🎮 Game')).toBeTruthy();
-      expect(getByText('🏪 Marketplace')).toBeTruthy();
-      expect(getByText('👥 Friends')).toBeTruthy();
-      expect(getByText('🏦 Bank')).toBeTruthy();
+      expect(screen.getByText('🛍 Shop')).toBeTruthy();
+      expect(screen.getByText('🎮 Games')).toBeTruthy();
+      expect(screen.getByText('🏪 Marketplace')).toBeTruthy();
+      expect(screen.getByText('👥 Friends')).toBeTruthy();
+      expect(screen.getByText('🏦 Bank')).toBeTruthy();
+      expect(screen.getByText('🎒 Inventory')).toBeTruthy();
+    });
+
+    it('routes correctly when navigation buttons are clicked', async () => {
+      await render(<DashboardScreen />);
+      
+      fireEvent.press(screen.getByText('🛍 Shop'));
+      expect(mockPush).toHaveBeenCalledWith('/shop');
+      
+      fireEvent.press(screen.getByText('🎮 Games'));
+      expect(mockPush).toHaveBeenCalledWith('/games');
+      
+      fireEvent.press(screen.getByText('🏪 Marketplace'));
+      expect(mockPush).toHaveBeenCalledWith('/marketplace');
+      
+      fireEvent.press(screen.getByText('👥 Friends'));
+      expect(mockPush).toHaveBeenCalledWith('/friends');
+      
+      fireEvent.press(screen.getByText('🏦 Bank'));
+      expect(mockPush).toHaveBeenCalledWith('/bank');
+      
+      fireEvent.press(screen.getByText('🎒 Inventory'));
+      expect(mockPush).toHaveBeenCalledWith('/inventory');
     });
   });
 
@@ -53,14 +94,17 @@ describe('Feature: Dashboard Interface', () => {
       });
     });
 
-    it('Given the user is logged in but has no pet', () => {
-      const { getByText, queryByTestId } = render(<DashboardScreen />);
+    it('Given the user is logged in but has no pet', async () => {
+      const { getByText, queryByTestId } = await render(<DashboardScreen />);
       
       // Then the user should NOT see an image of their pet
       expect(queryByTestId('base-pet-mock')).toBeNull();
 
       // But should see the Create your first pet button
-      expect(getByText('🐾 Create your first pet')).toBeTruthy();
+      await waitFor(() => {
+        expect(getByText(/Create your first pet/i)).toBeTruthy();
+      });
     });
   });
 });
+

@@ -13,7 +13,7 @@ export function useAuth() {
     async function syncSession() {
       try {
         // 1. Get NCB session (Web2)
-        const sessionRes = await fetch("/api/auth/get-session", { credentials: "include" });
+        const sessionRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/get-session`, { credentials: "include" });
         let sessionData = null;
         
         const contentType = sessionRes.headers.get("content-type");
@@ -31,7 +31,7 @@ export function useAuth() {
 
         // 2. Sync with database if logged in via Web2 or Web3
         if (hasNcbUser || activeAccount) {
-          const syncRes = await fetch("/api/sync-user", {
+          const syncRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/sync-user`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 

@@ -13,10 +13,22 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const url = new URL(req.url);
   const pathStr = url.pathname.replace(/^\/api\/auth\//, '');
-  return proxyRequest(req, pathStr, await req.text());
+  
+  const bodyText = await req.text();
+  let rememberMe = false;
+  try {
+    const bodyJson = JSON.parse(bodyText);
+    if (bodyJson.rememberMe === true) {
+      rememberMe = true;
+    }
+  } catch (e) {
+    // Ignore parse error
+  }
+  
+  return proxyRequest(req, pathStr, bodyText, rememberMe);
 }
 
-async function proxyRequest(req: Request, path: string, body?: string) {
+async function proxyRequest(req: Request, path: string, body?: string, rememberMe: boolean = false) {
   const reqUrl = new URL(req.url);
   // Ensure we pass the instance query parameter if not already present
   const searchParams = new URLSearchParams(reqUrl.search);
@@ -54,6 +66,17 @@ async function proxyRequest(req: Request, path: string, body?: string) {
   for (let c of setCookies) {
     // Remove "Domain=app.nocodebackend.com;" or similar
     c = c.replace(/Domain=[^;]+;?\s*/gi, '');
+    
+    // Adjust cookie expiration based on rememberMe flag
+    if (rememberMe) {
+      c = c.replace(/Max-Age=[^;]+;?\s*/gi, '');
+      c = c.replace(/Expires=[^;]+;?\s*/gi, '');
+      c += `; Max-Age=${30 * 24 * 60 * 60}`;
+    } else {
+      c = c.replace(/Max-Age=[^;]+;?\s*/gi, '');
+      c = c.replace(/Expires=[^;]+;?\s*/gi, '');
+    }
+    
     responseHeaders.append("Set-Cookie", c);
   }
 

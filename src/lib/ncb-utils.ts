@@ -110,7 +110,7 @@ export async function getRlsPolicies(): Promise<RlsPolicies> {
   const now = Date.now();
   if (cachedPolicies && now < cacheExpiry) return cachedPolicies;
   try {
-    const url = `${CONFIG.appUrl}/api/public/rls-policies?instance=${CONFIG.instance}`;
+    const url = `${process.env.EXPO_PUBLIC_API_URL || ''}/api/public/rls-policies?instance=${CONFIG.instance}`;
     const res = await fetch(url, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();

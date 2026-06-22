@@ -15,7 +15,7 @@ export default function StoreScreen() {
 
   const fetchItems = async () => {
     try {
-      const res = await fetch("/api/data/read/items");
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/data/read/items`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setItems(data);
@@ -34,7 +34,7 @@ export default function StoreScreen() {
   const handlePurchase = async (itemId: string, itemName: string) => {
     setPurchasing(itemId);
     try {
-      const res = await fetch("/api/store/purchase", {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/store/purchase`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId })

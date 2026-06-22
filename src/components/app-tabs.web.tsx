@@ -6,7 +6,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, useColorScheme, View, StyleSheet, Platform } from 'react-native';
 import React, { useState } from 'react';
@@ -27,6 +27,20 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>
+          <TabTrigger name="dashboard" href="/dashboard" asChild>
+            <TabButton>Dashboard</TabButton>
+          </TabTrigger>
+          
+          {/* Hidden triggers for other routes so Expo Router doesn't redirect to index */}
+          <View style={{ display: 'none' }}>
+            <TabTrigger name="shop" href="/shop" />
+            <TabTrigger name="games" href="/games" />
+            <TabTrigger name="marketplace" href="/marketplace" />
+            <TabTrigger name="friends" href="/friends" />
+            <TabTrigger name="bank" href="/bank" />
+            <TabTrigger name="inventory" href="/inventory" />
+            <TabTrigger name="mint" href="/mint" />
+          </View>
         </CustomTabList>
       </TabList>
     </Tabs>
@@ -55,7 +69,7 @@ export function CustomTabList(props: TabListProps) {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/sign-out', { method: 'POST' });
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
       if (Platform.OS === 'web') {
         window.location.reload();
       }
@@ -63,6 +77,13 @@ export function CustomTabList(props: TabListProps) {
       console.error(e);
     }
   };
+
+  const pathname = usePathname();
+  const isSignInPage = pathname === '/' && !ncbUser && !activeAccount;
+
+  if (isSignInPage) {
+    return null;
+  }
 
   return (
     <View {...props} style={styles.tabListContainer}>
