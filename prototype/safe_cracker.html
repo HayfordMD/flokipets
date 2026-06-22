@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Safe Cracker | Floki Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --safe-bg: rgba(30, 41, 59, 0.8);
+            --accent: #facc15;
+            --accent-hover: #eab308;
+            --accent-glow: rgba(250, 204, 21, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none; /* Prevent text selection on mobile taps */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow: hidden; /* For mobile app feel */
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--safe-bg);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px var(--accent-glow);
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .jackpot-display {
+            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            animation: pulse-border 2s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: rgba(250, 204, 21, 0.1); box-shadow: 0 0 0 var(--accent-glow); }
+            100% { border-color: rgba(250, 204, 21, 0.5); box-shadow: 0 0 15px var(--accent-glow); }
+        }
+
+        .jackpot-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-top: 0.25rem;
+        }
+
+        .safe-lock {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .digit-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .digit-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.1s;
+        }
+
+        .digit-btn:active {
+            transform: scale(0.8);
+            color: var(--text-main);
+        }
+
+        .digit-display {
+            width: 60px;
+            height: 70px;
+            background: #020617;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            border: 2px solid #334155;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
+            transition: border-color 0.3s;
+        }
+
+        .action-btn {
+            background: var(--accent);
+            color: #020617;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px var(--accent-glow);
+        }
+
+        .cost-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+
+        .history-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            max-height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* Hide scrollbar for cleaner look */
+        .history-container::-webkit-scrollbar { display: none; }
+        .history-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .history-guess {
+            letter-spacing: 2px;
+        }
+
+        .history-result {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #334155;
+        }
+
+        .dot.perfect { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .dot.exists { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+
+        .rules-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* Animations for success/fail */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .shake { animation: shake 0.4s; }
+        
+        .success-glow {
+            border-color: var(--success) !important;
+            color: var(--success);
+            text-shadow: 0 0 10px var(--success);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3), inset 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Overlay Modal */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 6, 23, 0.9);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: var(--success);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px var(--success);
+        }
+
+        .modal-text {
+            margin-bottom: 2rem;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .restart-btn {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:active { background: var(--accent); color: #020617; }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: -0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .legend-item { display: flex; align-items: center; gap: 0.25rem; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="app">
+        <header>
+            <h1>Safe Cracker</h1>
+            <div class="subtitle">Break the code, take the vault.</div>
+        </header>
+
+        <div class="jackpot-display">
+            <div class="subtitle">CURRENT JACKPOT</div>
+            <div class="jackpot-amount">12,500 FLOKI</div>
+        </div>
+
+        <div class="safe-lock">
+            <!-- Digits rendered by JS -->
+        </div>
+
+        <button class="action-btn" id="crackBtn">
+            Attempt Crack
+            <span class="cost-label">Cost: 50 FLOKI</span>
+        </button>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot perfect"></div> Right Number & Spot</div>
+            <div class="legend-item"><div class="dot exists"></div> Right Number, Wrong Spot</div>
+        </div>
+
+        <div class="history-container" id="history">
+            <!-- History items go here -->
+            <div class="rules-text" id="emptyHistoryText">
+                Enter a 4-digit combination. <br>Green = Correct digit & position.<br>Yellow = Correct digit, wrong position.
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="winModal">
+            <div class="modal-title">CRACKED!</div>
+            <div class="modal-text">You successfully broke into the vault and won the jackpot!</div>
+            <button class="restart-btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game Logic
+        let secretCode = [];
+        let currentGuess = [0, 0, 0, 0];
+        let isGameOver = false;
+
+        const safeLockEl = document.querySelector('.safe-lock');
+        const historyEl = document.getElementById('history');
+        const crackBtn = document.getElementById('crackBtn');
+        const emptyHistoryText = document.getElementById('emptyHistoryText');
+        const winModal = document.getElementById('winModal');
+        const restartBtn = document.getElementById('restartBtn');
+
+        function generateCode() {
+            secretCode = [];
+            for (let i = 0; i < 4; i++) {
+                // Using digits 0-9. Mastermind often avoids duplicates, but allowing duplicates is harder/standard for a safe.
+                secretCode.push(Math.floor(Math.random() * 10));
+            }
+            console.log("Secret Code (for testing):", secretCode.join(''));
+        }
+
+        function renderLock() {
+            safeLockEl.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const group = document.createElement('div');
+                group.className = 'digit-group';
+
+                const upBtn = document.createElement('button');
+                upBtn.className = 'digit-btn';
+                upBtn.innerHTML = '&#9650;';
+                upBtn.onclick = () => changeDigit(i, 1);
+
+                const display = document.createElement('div');
+                display.className = 'digit-display';
+                display.id = `digit-${i}`;
+                display.innerText = currentGuess[i];
+
+                const downBtn = document.createElement('button');
+                downBtn.className = 'digit-btn';
+                downBtn.innerHTML = '&#9660;';
+                downBtn.onclick = () => changeDigit(i, -1);
+
+                group.appendChild(upBtn);
+                group.appendChild(display);
+                group.appendChild(downBtn);
+                safeLockEl.appendChild(group);
+            }
+        }
+
+        function changeDigit(index, delta) {
+            if (isGameOver) return;
+            
+            currentGuess[index] += delta;
+            if (currentGuess[index] > 9) currentGuess[index] = 0;
+            if (currentGuess[index] < 0) currentGuess[index] = 9;
+            
+            const display = document.getElementById(`digit-${index}`);
+            display.innerText = currentGuess[index];
+            
+            // Subtle animation
+            display.style.transform = delta > 0 ? 'translateY(-2px)' : 'translateY(2px)';
+            setTimeout(() => { display.style.transform = 'translateY(0)'; }, 50);
+        }
+
+        function checkGuess() {
+            if (isGameOver) return;
+
+            if (emptyHistoryText) {
+                emptyHistoryText.style.display = 'none';
+            }
+
+            let perfectMatches = 0;
+            let existingMatches = 0;
+
+            // Create copies to mark off used digits
+            let secretCopy = [...secretCode];
+            let guessCopy = [...currentGuess];
+
+            // First pass: Find exact matches (Green)
+            for (let i = 0; i < 4; i++) {
+                if (guessCopy[i] === secretCopy[i]) {
+                    perfectMatches++;
+                    secretCopy[i] = null; // mark as used
+                    guessCopy[i] = -1;    // mark as matched
+                }
+            }
+
+            // Second pass: Find number matches in wrong position (Yellow)
+            for (let i = 0; i < 4; i++) {
+                if (guessCopy[i] !== -1) {
+                    const matchIndex = secretCopy.indexOf(guessCopy[i]);
+                    if (matchIndex !== -1) {
+                        existingMatches++;
+                        secretCopy[matchIndex] = null; // mark as used
+                    }
+                }
+            }
+
+            addHistoryItem(currentGuess.join(''), perfectMatches, existingMatches);
+
+            if (perfectMatches === 4) {
+                triggerWin();
+            } else {
+                // Shake effect
+                document.getElementById('app').classList.remove('shake');
+                void document.getElementById('app').offsetWidth; // trigger reflow
+                document.getElementById('app').classList.add('shake');
+            }
+        }
+
+        function addHistoryItem(guessStr, perfect, exists) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+
+            const guessEl = document.createElement('div');
+            guessEl.className = 'history-guess';
+            guessEl.innerText = guessStr;
+
+            const resultEl = document.createElement('div');
+            resultEl.className = 'history-result';
+            
+            for (let i = 0; i < perfect; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot perfect';
+                resultEl.appendChild(dot);
+            }
+            for (let i = 0; i < exists; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot exists';
+                resultEl.appendChild(dot);
+            }
+            
+            // Fill remainder with empty dots
+            const emptyDots = 4 - perfect - exists;
+            for (let i = 0; i < emptyDots; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                resultEl.appendChild(dot);
+            }
+
+            item.appendChild(guessEl);
+            item.appendChild(resultEl);
+            
+            // Insert at top
+            historyEl.insertBefore(item, historyEl.firstChild);
+        }
+
+        function triggerWin() {
+            isGameOver = true;
+            
+            // Glow effect on digits
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`digit-${i}`).classList.add('success-glow');
+            }
+
+            setTimeout(() => {
+                winModal.classList.add('active');
+            }, 1000);
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            currentGuess = [0, 0, 0, 0];
+            generateCode();
+            renderLock();
+            winModal.classList.remove('active');
+            historyEl.innerHTML = '';
+            if(emptyHistoryText) {
+                emptyHistoryText.style.display = 'block';
+                historyEl.appendChild(emptyHistoryText);
+            }
+        }
+
+        crackBtn.addEventListener('click', checkGuess);
+        restartBtn.addEventListener('click', resetGame);
+
+        // Initialize
+        resetGame();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floki Guess the Number</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 400px;
+        }
+        h1 {
+            color: #f3ba2f; /* Crypto yellow/gold */
+            margin-bottom: 5px;
+        }
+        p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background-color: #1f1f1f;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .balance {
+            color: #4caf50;
+        }
+        .cost-info {
+            font-size: 14px;
+            color: #aaaaaa;
+            margin-bottom: 20px;
+        }
+        input[type="number"] {
+            padding: 10px;
+            width: 80px;
+            font-size: 18px;
+            border: 2px solid #555;
+            border-radius: 6px;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #f3ba2f;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #ffc947;
+        }
+        button:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        .history {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #1f1f1f;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+        .history p {
+            margin: 5px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .play-btn {
+            background-color: #4caf50;
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .play-btn:hover {
+            background-color: #45a049;
+        }
+        #game-area {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Floki Number Guesser</h1>
+    
+    <div class="stats">
+        <div>Balance: <span class="balance" id="balance-display">500</span> Floki</div>
+        <div>Tries left: <span id="tries-display">-</span></div>
+    </div>
+    
+    <div class="cost-info" id="cost-info">
+        Loading cost...
+    </div>
+
+    <button class="play-btn" id="start-btn" onclick="startGame()">Play Now</button>
+
+    <div id="game-area">
+        <p>I'm thinking of a number between 1 and 100.</p>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <input type="number" id="guess-input" min="1" max="100" placeholder="1-100">
+            <button id="guess-btn" onclick="makeGuess()">Guess</button>
+        </div>
+        <div class="message" id="message-display">Good luck!</div>
+        
+        <div class="history" id="history-display">
+            <!-- Guesses will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Game State
+    let balance = 500; // Starting with some balance to allow playing
+    let targetNumber = 0;
+    let triesLeft = 0;
+    let isGameActive = false;
+    const MAX_TRIES = 5;
+    
+    // Elements
+    const balanceDisplay = document.getElementById('balance-display');
+    const triesDisplay = document.getElementById('tries-display');
+    const costInfoDisplay = document.getElementById('cost-info');
+    const startBtn = document.getElementById('start-btn');
+    const gameArea = document.getElementById('game-area');
+    const guessInput = document.getElementById('guess-input');
+    const guessBtn = document.getElementById('guess-btn');
+    const messageDisplay = document.getElementById('message-display');
+    const historyDisplay = document.getElementById('history-display');
+
+    // Check if free play is available today
+    function isFreePlayAvailable() {
+        const lastFreePlay = localStorage.getItem('lastFreePlayDate');
+        const today = new Date().toDateString();
+        return lastFreePlay !== today;
+    }
+
+    function updateUI() {
+        balanceDisplay.textContent = balance;
+        triesDisplay.textContent = isGameActive ? triesLeft : '-';
+        
+        if (!isGameActive) {
+            if (isFreePlayAvailable()) {
+                costInfoDisplay.textContent = "First play today is FREE! Win 100 Floki.";
+                startBtn.textContent = "Play for Free";
+            } else {
+                costInfoDisplay.textContent = "Cost: 50 Floki. Prize: 100 Floki.";
+                startBtn.textContent = "Play (50 Floki)";
+            }
+        }
+    }
+
+    function startGame() {
+        const freePlay = isFreePlayAvailable();
+        
+        if (!freePlay) {
+            if (balance < 50) {
+                alert("Not enough Floki to play!");
+                return;
+            }
+            balance -= 50;
+        } else {
+            // Mark free play as used for today
+            localStorage.setItem('lastFreePlayDate', new Date().toDateString());
+        }
+
+        targetNumber = Math.floor(Math.random() * 100) + 1;
+        triesLeft = MAX_TRIES;
+        isGameActive = true;
+        
+        // Reset UI
+        gameArea.style.display = 'block';
+        startBtn.style.display = 'none';
+        costInfoDisplay.style.display = 'none';
+        guessInput.value = '';
+        messageDisplay.textContent = "Game started! Make your guess.";
+        messageDisplay.style.color = "white";
+        historyDisplay.innerHTML = '';
+        guessInput.disabled = false;
+        guessBtn.disabled = false;
+        
+        updateUI();
+        guessInput.focus();
+    }
+
+    function makeGuess() {
+        if (!isGameActive) return;
+        
+        const guess = parseInt(guessInput.value);
+        if (isNaN(guess) || guess < 1 || guess > 100) {
+            messageDisplay.textContent = "Please enter a valid number between 1 and 100.";
+            messageDisplay.style.color = "red";
+            return;
+        }
+
+        triesLeft--;
+        updateUI();
+
+        const historyP = document.createElement('p');
+
+        if (guess === targetNumber) {
+            // Win
+            balance += 100;
+            messageDisplay.textContent = `🎉 Correct! You won 100 Floki!`;
+            messageDisplay.style.color = "#4caf50";
+            historyP.innerHTML = `Guess ${MAX_TRIES - triesLeft}: <b>${guess}</b> - <span style="color:#4caf50">Correct!</span>`;
+            endGame();
+        } else if (triesLeft === 0) {
+            // Lose
+            messageDisplay.textContent = `Game Over! The number was ${targetNumber}.`;
+            messageDisplay.style.color = "red";
+            historyP.innerHTML = `Guess ${MAX_TRIES - triesLeft}: <b>${guess}</b> - <span style="color:red">Wrong (Game Over)</span>`;
+            endGame();
+        } else {
+            // Hint
+            if (guess < targetNumber) {
+                messageDisplay.textContent = "Too low! Try higher.";
+                historyP.innerHTML = `Guess ${MAX_TRIES - triesLeft}: <b>${guess}</b> - Too low`;
+            } else {
+                messageDisplay.textContent = "Too high! Try lower.";
+                historyP.innerHTML = `Guess ${MAX_TRIES - triesLeft}: <b>${guess}</b> - Too high`;
+            }
+            messageDisplay.style.color = "#f3ba2f";
+        }
+
+        historyDisplay.prepend(historyP);
+        guessInput.value = '';
+        guessInput.focus();
+    }
+
+    function endGame() {
+        isGameActive = false;
+        guessInput.disabled = true;
+        guessBtn.disabled = true;
+        startBtn.style.display = 'block';
+        startBtn.textContent = "Play Again";
+        costInfoDisplay.style.display = 'block';
+        updateUI();
+    }
+
+    // Handle Enter key for guessing
+    guessInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            makeGuess();
+        }
+    });
+
+    // Initialize UI
+    updateUI();
+</script>
+
+</body>
+</html>
