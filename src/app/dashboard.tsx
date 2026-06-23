@@ -15,7 +15,7 @@ import { useFlokiBalance } from '@/hooks/useFlokiBalance';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { flokiBalance: petFloki, ncbUser, loading, activeAccount } = useAuth();
+  const { flokiBalance: petFloki, ncbUser, loading, activeAccount, isAdmin } = useAuth();
   const { formattedBalance: onChainFloki, isLoading: isBalanceLoading } = useFlokiBalance();
   const { flokiBalance, ncbUser: ncbUserAuth, loading: loadingAuth, activeAccount: activeAccountAuth } = useAuth(); // kept for compatibility if needed elsewhere, but using destructured above
 
@@ -167,6 +167,11 @@ export default function DashboardScreen() {
                     connectModal={{ size: "wide" }}
                   />
                 </View>
+              )}
+              {isAdmin && (
+                <Pressable onPress={() => { setIsMenuOpen(false); router.push('/admin'); }} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#3B82F6', borderRadius: 8, width: '100%', marginBottom: 12 }}>
+                  <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center', fontSize: 16 }}>ADMIN</Text>
+                </Pressable>
               )}
               <Pressable onPress={handleLogout} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#EF4444', borderRadius: 8, width: '100%' }}>
                 <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center', fontSize: 16 }}>LOGOUT</Text>

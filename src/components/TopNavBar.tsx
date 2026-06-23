@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'expo-router';
 
 export const TopNavBar = () => {
-  const { ncbUser, activeAccount } = useAuth();
+  const { ncbUser, activeAccount, isAdmin } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
 
   if (!ncbUser && !activeAccount) {
     return null; // Don't show if not logged in
@@ -33,6 +35,11 @@ export const TopNavBar = () => {
             </TouchableOpacity>
             {isDropdownOpen && (
               <View style={styles.dropdown}>
+                {isAdmin && (
+                  <TouchableOpacity onPress={() => { setIsDropdownOpen(false); router.push('/admin'); }} style={styles.dropdownItem}>
+                    <Text style={styles.dropdownText}>Admin Dashboard</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={handleLogout} style={styles.dropdownItem}>
                   <Text style={styles.dropdownText}>Logout</Text>
                 </TouchableOpacity>

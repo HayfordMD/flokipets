@@ -1,7 +1,7 @@
 const CONFIG = {
   instance: process.env.NCB_INSTANCE!,
   apiUrl: process.env.NCB_AUTH_API_URL!, // Note: using NCB_AUTH_API_URL as per our .env
-  secretKey: process.env.NCB_SECRET_KEY!,
+  secretKey: process.env.NCB_FULL_PERMISSIONS_KEY || process.env.NCB_SECRET_KEY || "",
 };
 
 export async function GET(req: Request) {
@@ -42,6 +42,7 @@ async function proxyRequest(req: Request, path: string, body?: string, rememberM
   
   if (CONFIG.secretKey) {
     headers.set("Authorization", `Bearer ${CONFIG.secretKey}`);
+    headers.set("x-api-key", CONFIG.secretKey);
   }
   
   const cookie = req.headers.get("cookie");

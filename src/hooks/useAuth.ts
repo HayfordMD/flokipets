@@ -61,11 +61,21 @@ export function useAuth() {
     return () => { isMounted = false; };
   }, [activeAccount, activeAccount?.address]); // re-run if wallet address changes
 
+  const isAdmin = 
+    ncbUser?.is_admin === true ||
+    ncbUser?.is_admin === 1 ||
+    ncbUser?.email === 'mdhayford@gmail.com' ||
+    ncbUser?.name === 'Mark Hayford' ||
+    ncbUser?.id === '1D1vc6GsXTpQEUO6vYgqryoCcdOnLcln' ||
+    (activeAccount?.address && activeAccount.address.toLowerCase() === 'bc1q54rhehxtwsalrwfc3qldtprved5cj5nvqdtwc4'.toLowerCase()) ||
+    (activeAccount?.address && activeAccount.address.toLowerCase() === '0x036512B25B7b0ac0D7DDdcAEA74ADF55e9A91365'.toLowerCase());
+
   return { 
     activeAccount, 
     ncbUser, 
     loading, 
     isOffChain: ncbUser && !activeAccount,
-    flokiBalance
+    flokiBalance,
+    isAdmin
   };
 }

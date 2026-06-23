@@ -3,6 +3,7 @@ export const CONFIG = {
   dataApiUrl: process.env.NCB_DATA_API_URL!,
   authApiUrl: process.env.NCB_AUTH_API_URL!,
   appUrl: process.env.NCB_APP_URL || "https://app.nocodebackend.com",
+  apiKey: process.env.NCB_FULL_PERMISSIONS_KEY || process.env.NCB_SECRET_KEY || "",
 };
 
 export function extractAuthCookies(cookieHeader: string | null): string {
@@ -28,6 +29,7 @@ export async function getSessionUser(cookieHeader: string | null): Promise<{ id:
     headers: {
       "Content-Type": "application/json",
       "X-Database-Instance": CONFIG.instance,
+      "x-api-key": CONFIG.apiKey,
       "Cookie": authCookies,
     },
   });
@@ -58,6 +60,7 @@ export async function proxyToNCB(
     headers: {
       "Content-Type": "application/json",
       "X-Database-Instance": CONFIG.instance,
+      "x-api-key": CONFIG.apiKey,
       "Cookie": authCookies,
       "Origin": origin,
     },
@@ -88,6 +91,7 @@ export async function proxyToNCBPublic(
     headers: {
       "Content-Type": "application/json",
       "X-Database-Instance": CONFIG.instance,
+      "x-api-key": CONFIG.apiKey,
       "Origin": origin,
       // NO cookies forwarded — anonymous request
     },

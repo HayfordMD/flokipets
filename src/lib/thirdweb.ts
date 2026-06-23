@@ -1,5 +1,5 @@
 import { createThirdwebClient } from "thirdweb";
-import { smartWallet, inAppWallet, createWallet } from "thirdweb/wallets";
+import { inAppWallet } from "thirdweb/wallets";
 import { ACTIVE_CHAIN } from "./constants";
 
 export const client = createThirdwebClient({
@@ -13,5 +13,4 @@ export const appWallets = [
       mode: "popup",
     },
   }),
-  createWallet("injected"),
 ];
