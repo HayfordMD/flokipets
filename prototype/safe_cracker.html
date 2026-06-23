@@ -11,7 +11,6 @@
             --bg-color: #0f172a;
             --safe-bg: rgba(30, 41, 59, 0.8);
             --accent: #facc15;
-            --accent-hover: #eab308;
             --accent-glow: rgba(250, 204, 21, 0.5);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
@@ -23,7 +22,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            user-select: none; /* Prevent text selection on mobile taps */
+            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -36,7 +35,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 1rem;
-            overflow: hidden; /* For mobile app feel */
+            overflow: hidden;
         }
 
         .app-container {
@@ -140,37 +139,94 @@
             color: var(--text-main);
             border: 2px solid #334155;
             box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+        }
+
+        .digit-display.status-perfect {
+            border-color: var(--success);
+            color: var(--success);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3), inset 0 5px 10px rgba(0,0,0,0.5);
+            text-shadow: 0 0 10px var(--success);
+        }
+
+        .digit-display.status-exists {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.3), inset 0 5px 10px rgba(0,0,0,0.5);
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        .digit-display.status-mixed {
+            border-color: var(--accent); /* Yellow border */
+            color: var(--success); /* Green text */
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.4), inset 0 5px 10px rgba(0,0,0,0.5);
+            text-shadow: 0 0 10px var(--success);
+        }
+
+        .attempts-label {
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-top: -0.5rem;
+            transition: color 0.3s;
         }
 
         .action-btn {
-            background: var(--accent);
-            color: #020617;
+            --btn-bg: #3b82f6;
+            --btn-text: #ffffff;
+            --btn-glow: rgba(59, 130, 246, 0.5);
+
+            background: var(--btn-bg);
+            color: var(--btn-text);
             border: none;
             border-radius: 12px;
-            padding: 1rem;
+            padding: 16px 1rem;
             font-size: 1.1rem;
             font-weight: 800;
             font-family: 'Inter', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1px;
             cursor: pointer;
-            box-shadow: 0 4px 15px var(--accent-glow);
-            transition: all 0.2s;
+            box-shadow: 0 4px 15px var(--btn-glow);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .action-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 5px var(--accent-glow);
+            transform: translateY(2px) !important;
+            box-shadow: 0 2px 5px var(--btn-glow) !important;
+        }
+        
+        .action-btn:disabled {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            transform: none !important;
+            animation: none !important;
+        }
+
+        .urgent-pulse {
+            animation: urgentPulse 0.8s infinite alternate;
+        }
+
+        @keyframes urgentPulse {
+            0% { transform: scale(1); box-shadow: 0 0 15px var(--btn-glow); }
+            100% { transform: scale(1.05); box-shadow: 0 0 30px var(--btn-glow); }
         }
 
         .cost-label {
             display: block;
             font-size: 0.75rem;
-            font-weight: 600;
-            opacity: 0.8;
+            font-weight: 700;
+            opacity: 0.95;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 0.2rem;
         }
 
@@ -178,14 +234,13 @@
             background: rgba(0,0,0,0.3);
             border-radius: 12px;
             padding: 1rem;
-            max-height: 150px;
+            max-height: 140px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
-        /* Hide scrollbar for cleaner look */
         .history-container::-webkit-scrollbar { display: none; }
         .history-container { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -206,24 +261,43 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .history-guess {
-            letter-spacing: 2px;
-        }
-
-        .history-result {
+        .history-guess-wordle {
             display: flex;
             gap: 0.5rem;
+            margin: 0 auto;
         }
 
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #334155;
+        .history-digit {
+            width: 28px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #020617;
+            border: 1px solid #334155;
+            color: var(--text-muted);
         }
 
-        .dot.perfect { background: var(--success); box-shadow: 0 0 5px var(--success); }
-        .dot.exists { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+        .history-digit.perfect {
+            border-color: var(--success);
+            color: var(--success);
+            text-shadow: 0 0 5px var(--success);
+        }
+
+        .history-digit.exists {
+            border-color: var(--accent);
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--accent);
+        }
+
+        .history-digit.mixed {
+            border-color: var(--accent); /* Yellow */
+            color: var(--success); /* Green */
+            text-shadow: 0 0 5px var(--success);
+        }
 
         .rules-text {
             font-size: 0.75rem;
@@ -232,7 +306,6 @@
             line-height: 1.4;
         }
 
-        /* Animations for success/fail */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
@@ -240,19 +313,12 @@
         }
 
         .shake { animation: shake 0.4s; }
-        
-        .success-glow {
-            border-color: var(--success) !important;
-            color: var(--success);
-            text-shadow: 0 0 10px var(--success);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3), inset 0 5px 10px rgba(0,0,0,0.5);
-        }
 
         /* Overlay Modal */
         .modal-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(2, 6, 23, 0.9);
+            background: rgba(2, 6, 23, 0.95);
             border-radius: 24px;
             display: flex;
             flex-direction: column;
@@ -273,16 +339,18 @@
 
         .modal-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
-            color: var(--success);
+            font-size: 2.2rem;
             margin-bottom: 1rem;
-            text-shadow: 0 0 20px var(--success);
         }
+
+        .title-win { color: var(--success); text-shadow: 0 0 20px var(--success); }
+        .title-lose { color: var(--danger); text-shadow: 0 0 20px var(--danger); }
 
         .modal-text {
             margin-bottom: 2rem;
             color: var(--text-main);
             font-size: 1.1rem;
+            line-height: 1.5;
         }
 
         .restart-btn {
@@ -301,6 +369,7 @@
         .legend {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 1rem;
             font-size: 0.7rem;
             color: var(--text-muted);
@@ -308,6 +377,14 @@
             margin-bottom: 0.5rem;
         }
         .legend-item { display: flex; align-items: center; gap: 0.25rem; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-dot.perfect { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .legend-dot.exists { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+        .legend-dot.mixed { 
+            background: var(--success);
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 5px rgba(250, 204, 21, 0.5);
+        }
 
     </style>
 </head>
@@ -321,34 +398,36 @@
 
         <div class="jackpot-display">
             <div class="subtitle">CURRENT JACKPOT</div>
-            <div class="jackpot-amount">12,500 FLOKI</div>
+            <div class="jackpot-amount">10,000 FLOKI</div>
         </div>
 
         <div class="safe-lock">
             <!-- Digits rendered by JS -->
         </div>
 
+        <div class="attempts-label" id="attemptsLabel">5 Tries Remaining</div>
+
         <button class="action-btn" id="crackBtn">
-            Attempt Crack
-            <span class="cost-label">Cost: 50 FLOKI</span>
+            <span id="btnMainText">Attempt Crack</span>
+            <span class="cost-label" id="costLabel">Cost: FREE</span>
         </button>
 
         <div class="legend">
-            <div class="legend-item"><div class="dot perfect"></div> Right Number & Spot</div>
-            <div class="legend-item"><div class="dot exists"></div> Right Number, Wrong Spot</div>
+            <div class="legend-item"><div class="legend-dot perfect"></div> Exact Spot</div>
+            <div class="legend-item"><div class="legend-dot exists"></div> Wrong Spot</div>
+            <div class="legend-item"><div class="legend-dot mixed"></div> More Left!</div>
         </div>
 
         <div class="history-container" id="history">
-            <!-- History items go here -->
             <div class="rules-text" id="emptyHistoryText">
-                Enter a 4-digit combination. <br>Green = Correct digit & position.<br>Yellow = Correct digit, wrong position.
+                5 Attempts daily.<br>Can you guess the combination?
             </div>
         </div>
 
-        <div class="modal-overlay" id="winModal">
-            <div class="modal-title">CRACKED!</div>
-            <div class="modal-text">You successfully broke into the vault and won the jackpot!</div>
-            <button class="restart-btn" id="restartBtn">Play Again</button>
+        <div class="modal-overlay" id="endModal">
+            <div class="modal-title" id="endTitle">CRACKED!</div>
+            <div class="modal-text" id="endText">You successfully broke into the vault!</div>
+            <button class="restart-btn" id="restartBtn">Play Again (100 FLOKI)</button>
         </div>
     </div>
 
@@ -356,19 +435,37 @@
         // Game Logic
         let secretCode = [];
         let currentGuess = [0, 0, 0, 0];
+        let attempts = 0;
+        const maxAttempts = 5;
+        const attemptCosts = ["FREE", "100 FLOKI", "500 FLOKI", "2,000 FLOKI", "5,000 FLOKI"];
+        
+        // Colors: Blue -> Green -> Yellow -> Orange -> Red
+        const btnColors = [
+            { bg: '#3b82f6', text: '#ffffff', glow: 'rgba(59, 130, 246, 0.5)' },
+            { bg: '#22c55e', text: '#020617', glow: 'rgba(34, 197, 94, 0.5)' },
+            { bg: '#eab308', text: '#020617', glow: 'rgba(234, 179, 8, 0.5)' },
+            { bg: '#f97316', text: '#ffffff', glow: 'rgba(249, 115, 22, 0.5)' },
+            { bg: '#ef4444', text: '#ffffff', glow: 'rgba(239, 68, 68, 0.5)' }
+        ];
+
         let isGameOver = false;
 
         const safeLockEl = document.querySelector('.safe-lock');
         const historyEl = document.getElementById('history');
         const crackBtn = document.getElementById('crackBtn');
+        const btnMainText = document.getElementById('btnMainText');
+        const costLabel = document.getElementById('costLabel');
+        const attemptsLabel = document.getElementById('attemptsLabel');
         const emptyHistoryText = document.getElementById('emptyHistoryText');
-        const winModal = document.getElementById('winModal');
+        
+        const endModal = document.getElementById('endModal');
+        const endTitle = document.getElementById('endTitle');
+        const endText = document.getElementById('endText');
         const restartBtn = document.getElementById('restartBtn');
 
         function generateCode() {
             secretCode = [];
             for (let i = 0; i < 4; i++) {
-                // Using digits 0-9. Mastermind often avoids duplicates, but allowing duplicates is harder/standard for a safe.
                 secretCode.push(Math.floor(Math.random() * 10));
             }
             console.log("Secret Code (for testing):", secretCode.join(''));
@@ -412,7 +509,8 @@
             const display = document.getElementById(`digit-${index}`);
             display.innerText = currentGuess[index];
             
-            // Subtle animation
+            display.classList.remove('status-perfect', 'status-exists', 'status-mixed');
+            
             display.style.transform = delta > 0 ? 'translateY(-2px)' : 'translateY(2px)';
             setTimeout(() => { display.style.transform = 'translateY(0)'; }, 50);
         }
@@ -424,101 +522,171 @@
                 emptyHistoryText.style.display = 'none';
             }
 
-            let perfectMatches = 0;
-            let existingMatches = 0;
-
-            // Create copies to mark off used digits
             let secretCopy = [...secretCode];
             let guessCopy = [...currentGuess];
+            let statuses = ['none', 'none', 'none', 'none'];
 
-            // First pass: Find exact matches (Green)
+            // Pass 1: exact matches
             for (let i = 0; i < 4; i++) {
                 if (guessCopy[i] === secretCopy[i]) {
-                    perfectMatches++;
-                    secretCopy[i] = null; // mark as used
-                    guessCopy[i] = -1;    // mark as matched
+                    statuses[i] = 'perfect';
+                    secretCopy[i] = null;
+                    guessCopy[i] = -1;
                 }
             }
 
-            // Second pass: Find number matches in wrong position (Yellow)
+            // Pass 2: wrong spot matches
             for (let i = 0; i < 4; i++) {
                 if (guessCopy[i] !== -1) {
                     const matchIndex = secretCopy.indexOf(guessCopy[i]);
                     if (matchIndex !== -1) {
-                        existingMatches++;
-                        secretCopy[matchIndex] = null; // mark as used
+                        statuses[i] = 'exists';
+                        secretCopy[matchIndex] = null;
+                    }
+                }
+            }
+            
+            // Pass 3: Check for remaining duplicates "left on the board"
+            // If a digit was a perfect match, but that same digit STILL exists in the remaining secretCopy,
+            // it means the secret code has another instance of this number that hasn't been found.
+            // In this case, we change the perfect match's status to 'mixed' (Green text, Yellow border)
+            for(let i=0; i<4; i++) {
+                if(statuses[i] === 'perfect') {
+                    const digit = currentGuess[i];
+                    if (secretCopy.includes(digit)) {
+                        statuses[i] = 'mixed';
                     }
                 }
             }
 
-            addHistoryItem(currentGuess.join(''), perfectMatches, existingMatches);
+            // Apply styles
+            for (let i = 0; i < 4; i++) {
+                const display = document.getElementById(`digit-${i}`);
+                display.classList.remove('status-perfect', 'status-exists', 'status-mixed');
+                if (statuses[i] === 'perfect') {
+                    display.classList.add('status-perfect');
+                } else if (statuses[i] === 'exists') {
+                    display.classList.add('status-exists');
+                } else if (statuses[i] === 'mixed') {
+                    display.classList.add('status-mixed');
+                }
+            }
 
-            if (perfectMatches === 4) {
+            addHistoryItemWordle(currentGuess, statuses);
+
+            attempts++;
+            
+            // Winning condition: 4 greens (either perfect or mixed, both mean correct spot)
+            const correctSpots = statuses.filter(s => s === 'perfect' || s === 'mixed').length;
+
+            if (correctSpots === 4) {
                 triggerWin();
             } else {
-                // Shake effect
                 document.getElementById('app').classList.remove('shake');
-                void document.getElementById('app').offsetWidth; // trigger reflow
+                void document.getElementById('app').offsetWidth; 
                 document.getElementById('app').classList.add('shake');
+
+                if (attempts >= maxAttempts) {
+                    triggerLose();
+                } else {
+                    updateUIForNextAttempt();
+                }
             }
         }
 
-        function addHistoryItem(guessStr, perfect, exists) {
+        function addHistoryItemWordle(guessArray, statusArray) {
             const item = document.createElement('div');
             item.className = 'history-item';
 
             const guessEl = document.createElement('div');
-            guessEl.className = 'history-guess';
-            guessEl.innerText = guessStr;
-
-            const resultEl = document.createElement('div');
-            resultEl.className = 'history-result';
+            guessEl.className = 'history-guess-wordle';
             
-            for (let i = 0; i < perfect; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'dot perfect';
-                resultEl.appendChild(dot);
-            }
-            for (let i = 0; i < exists; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'dot exists';
-                resultEl.appendChild(dot);
-            }
-            
-            // Fill remainder with empty dots
-            const emptyDots = 4 - perfect - exists;
-            for (let i = 0; i < emptyDots; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'dot';
-                resultEl.appendChild(dot);
+            for(let i = 0; i < 4; i++) {
+                const digitBox = document.createElement('div');
+                digitBox.className = 'history-digit';
+                digitBox.innerText = guessArray[i];
+                if (statusArray[i] === 'perfect') digitBox.classList.add('perfect');
+                if (statusArray[i] === 'exists') digitBox.classList.add('exists');
+                if (statusArray[i] === 'mixed') digitBox.classList.add('mixed');
+                guessEl.appendChild(digitBox);
             }
 
             item.appendChild(guessEl);
-            item.appendChild(resultEl);
-            
-            // Insert at top
             historyEl.insertBefore(item, historyEl.firstChild);
+        }
+
+        function updateUIForNextAttempt() {
+            const remaining = maxAttempts - attempts;
+            attemptsLabel.innerText = `${remaining} ${remaining === 1 ? 'Try' : 'Tries'} Remaining`;
+            
+            if(remaining === 1) {
+                attemptsLabel.style.color = 'var(--danger)';
+            } else {
+                attemptsLabel.style.color = 'var(--text-muted)';
+            }
+
+            costLabel.innerText = `Cost: ${attemptCosts[attempts]}`;
+            
+            // Dynamic Button Color
+            const style = btnColors[attempts];
+            crackBtn.style.setProperty('--btn-bg', style.bg);
+            crackBtn.style.setProperty('--btn-text', style.text);
+            crackBtn.style.setProperty('--btn-glow', style.glow);
+
+            // Dynamic Button Size (shrinks main text, increases cost size, decreases padding)
+            const basePadding = 16; // px
+            const baseMainSize = 1.1; // rem
+            const baseCostSize = 0.75; // rem
+            
+            crackBtn.style.padding = `${basePadding - (attempts * 2)}px 1rem`;
+            btnMainText.style.fontSize = `${baseMainSize - (attempts * 0.08)}rem`;
+            costLabel.style.fontSize = `${baseCostSize + (attempts * 0.18)}rem`;
+
+            // Add intense pulsing animation on the final attempt
+            if (attempts === maxAttempts - 1) {
+                crackBtn.classList.add('urgent-pulse');
+            } else {
+                crackBtn.classList.remove('urgent-pulse');
+            }
         }
 
         function triggerWin() {
             isGameOver = true;
+            crackBtn.disabled = true;
+            crackBtn.classList.remove('urgent-pulse');
+            endTitle.innerText = "CRACKED!";
+            endTitle.className = "modal-title title-win";
+            endText.innerText = `You broke the code in ${attempts} attempt(s) and won the 10,000 FLOKI jackpot!`;
             
-            // Glow effect on digits
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`digit-${i}`).classList.add('success-glow');
-            }
-
             setTimeout(() => {
-                winModal.classList.add('active');
-            }, 1000);
+                endModal.classList.add('active');
+            }, 800);
+        }
+        
+        function triggerLose() {
+            isGameOver = true;
+            crackBtn.disabled = true;
+            crackBtn.classList.remove('urgent-pulse');
+            endTitle.innerText = "LOCKED OUT";
+            endTitle.className = "modal-title title-lose";
+            endText.innerText = `You failed to crack the safe.\nThe code was ${secretCode.join('')}. Try again tomorrow!`;
+            
+            setTimeout(() => {
+                endModal.classList.add('active');
+            }, 800);
         }
 
         function resetGame() {
             isGameOver = false;
+            attempts = 0;
             currentGuess = [0, 0, 0, 0];
+            crackBtn.disabled = false;
+            
+            updateUIForNextAttempt();
             generateCode();
             renderLock();
-            winModal.classList.remove('active');
+            
+            endModal.classList.remove('active');
             historyEl.innerHTML = '';
             if(emptyHistoryText) {
                 emptyHistoryText.style.display = 'block';

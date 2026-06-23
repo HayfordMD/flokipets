@@ -80,6 +80,14 @@
             transform: scale(0.95);
         }
 
+        .floki-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            margin-left: 4px;
+            display: inline-block;
+        }
+
         .result {
             position: absolute;
             top: 0;
@@ -167,7 +175,7 @@
         </div>
 
         <div class="total-display" id="total-display">
-            Total: $0
+            Total: 0<img src="../assets/images/floki/floki%20icon.png" class="floki-icon" />
         </div>
 
         <button class="reset-btn" id="resetBtn" onclick="initGame()">Try Again</button>
@@ -193,7 +201,7 @@
             }
 
             container.innerHTML = '';
-            totalDisplay.textContent = 'Total: $0';
+            totalDisplay.innerHTML = 'Total: 0<img src="../assets/images/floki/floki%20icon.png" class="floki-icon" />';
             totalDisplay.classList.remove('revealed');
             circleData = [];
 
@@ -212,7 +220,7 @@
 
             const resultDiv = document.createElement('div');
             resultDiv.className = 'result';
-            resultDiv.textContent = `$${value}`;
+            resultDiv.innerHTML = `${value}<img src="../assets/images/floki/floki%20icon.png" class="floki-icon" />`;
 
             const canvas = document.createElement('canvas');
             canvas.width = 110;
@@ -269,7 +277,7 @@
 
         function updateTotal() {
             const revealedTotal = circleData.filter(d => d.isRevealed).reduce((sum, d) => sum + d.value, 0);
-            totalDisplay.textContent = `Total: $${revealedTotal}`;
+            totalDisplay.innerHTML = `Total: ${revealedTotal}<img src="../assets/images/floki/floki%20icon.png" class="floki-icon" />`;
         }
 
         function checkAllRevealed() {

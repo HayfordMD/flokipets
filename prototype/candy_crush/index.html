@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emoji Crush</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .header {
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .header-title h2 {
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.2rem;
+        }
+        
+        .floki-balance {
+            font-size: 0.9rem;
+            color: #fbbf24;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .game-stats {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #e2e8f0;
+        }
+
+        .grid-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 15px;
+            position: relative;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 4px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 8px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1/1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .cell {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 400px) {
+            .cell { font-size: 1.6rem; }
+        }
+
+        .cell:active {
+            transform: scale(0.85);
+        }
+
+        .cell.selected {
+            background-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6), inset 0 2px 4px rgba(255,255,255,0.2);
+            transform: scale(1.1);
+            z-index: 5;
+        }
+
+        .falling { animation: dropDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes dropDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .popping { animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Overlay Styles */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            border-radius: 16px;
+        }
+        
+        .overlay-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 90%;
+        }
+
+        .overlay-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #f8fafc;
+        }
+
+        .overlay-content p {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: linear-gradient(to right, #3b82f6, #6366f1);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            background: #475569;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hidden { display: none !important; }
+        
+        .floki-earned {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            font-weight: 800;
+            margin: 15px 0;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <h2>Emoji Crush</h2>
+        </div>
+        <div class="floki-balance">
+            <span id="floki-balance">100</span> F
+        </div>
+    </div>
+
+    <div class="game-stats">
+        <div class="stat-box">
+            <div class="stat-label">Moves</div>
+            <div class="stat-value" id="moves">20</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="score">0</div>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <div class="grid" id="grid"></div>
+        
+        <!-- Start Game Overlay -->
+        <div class="overlay" id="start-overlay">
+            <div class="overlay-content">
+                <h3>Ready to Play?</h3>
+                <p id="play-status">Loading...</p>
+                <button class="btn" id="btn-start" onclick="startGame()">Play</button>
+            </div>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div class="overlay hidden" id="game-over-overlay">
+            <div class="overlay-content">
+                <h3>Out of Moves!</h3>
+                <p>Final Score: <span id="final-score" style="font-weight: bold; color: white;">0</span></p>
+                <div class="floki-earned">+<span id="earned-floki">0</span> Floki!</div>
+                <button class="btn" onclick="showStartScreen()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        const width = 8;
+        const gridElement = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const movesElement = document.getElementById('moves');
+        const balanceElement = document.getElementById('floki-balance');
+        const emojis = ['🍎', '🍌', '🍇', '🍉', '🥥', '🍒'];
+
+        let squares = [];
+        let score = 0;
+        let moves = 20;
+        let isInitializing = true;
+        let isAnimating = false;
+        let gameActive = false;
+
+        let draggedCandy;
+        let replacedCandy;
+        let squareIdBeingDragged;
+        let squareIdBeingReplaced;
+
+        // --- ECONOMY STATE ---
+        let userState = {
+            balance: 100, // Starting balance
+            playsToday: 0,
+            lastPlayDate: new Date().toDateString()
+        };
+
+        function loadState() {
+            const saved = localStorage.getItem('emojiCrushState');
+            if (saved) {
+                userState = JSON.parse(saved);
+                // Reset daily limit if it's a new day
+                if (userState.lastPlayDate !== new Date().toDateString()) {
+                    userState.playsToday = 0;
+                    userState.lastPlayDate = new Date().toDateString();
+                    saveState();
+                }
+            }
+            updateBalanceUI();
+            showStartScreen();
+        }
+
+        function saveState() {
+            localStorage.setItem('emojiCrushState', JSON.stringify(userState));
+        }
+
+        function updateBalanceUI() {
+            balanceElement.innerText = userState.balance;
+        }
+
+        // --- UI OVERLAYS ---
+        function showStartScreen() {
+            document.getElementById('game-over-overlay').classList.add('hidden');
+            const startOverlay = document.getElementById('start-overlay');
+            startOverlay.classList.remove('hidden');
+            
+            const statusEl = document.getElementById('play-status');
+            const btn = document.getElementById('btn-start');
+
+            let plays = userState.playsToday;
+            
+            if (plays >= 20) {
+                statusEl.innerHTML = "You've reached the maximum of 20 plays for today. Come back tomorrow!";
+                btn.disabled = true;
+                btn.innerText = "Max Plays Reached";
+            } else if (plays < 5) {
+                statusEl.innerHTML = `Free plays left today: <strong style="color:white">${5 - plays}</strong><br>Total plays today: ${plays}/20`;
+                btn.disabled = false;
+                btn.innerText = "Play for Free";
+            } else {
+                statusEl.innerHTML = `Cost to play: <strong style="color:#fbbf24">5 Floki</strong><br>Total plays today: ${plays}/20`;
+                if (userState.balance >= 5) {
+                    btn.disabled = false;
+                    btn.innerText = "Pay 5 Floki to Play";
+                } else {
+                    btn.disabled = true;
+                    btn.innerText = "Not enough Floki";
+                }
+            }
+        }
+
+        function startGame() {
+            if (userState.playsToday >= 20) return;
+            
+            if (userState.playsToday >= 5) {
+                if (userState.balance >= 5) {
+                    userState.balance -= 5;
+                } else {
+                    return; // Should be disabled, but just in case
+                }
+            }
+            
+            userState.playsToday++;
+            saveState();
+            updateBalanceUI();
+
+            document.getElementById('start-overlay').classList.add('hidden');
+            
+            score = 0;
+            moves = 20;
+            scoreElement.innerText = score;
+            movesElement.innerText = moves;
+            gameActive = true;
+            isInitializing = true;
+            
+            gridElement.innerHTML = '';
+            squares = [];
+            createBoard();
+        }
+
+        function gameOver() {
+            gameActive = false;
+            let earnedFloki = Math.floor(score / 10);
+            
+            userState.balance += earnedFloki;
+            saveState();
+            updateBalanceUI();
+
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('earned-floki').innerText = earnedFloki;
+            document.getElementById('game-over-overlay').classList.remove('hidden');
+        }
+
+        // --- GAME MECHANICS ---
+        function createBoard() {
+            for (let i = 0; i < width * width; i++) {
+                const square = document.createElement('div');
+                square.setAttribute('draggable', true);
+                square.setAttribute('id', i);
+                square.classList.add('cell');
+                let randomEmoji = Math.floor(Math.random() * emojis.length);
+                square.innerHTML = emojis[randomEmoji];
+                gridElement.appendChild(square);
+                squares.push(square);
+            }
+            
+            squares.forEach(square => {
+                square.addEventListener('touchstart', dragStartTouch, {passive: false});
+                square.addEventListener('touchmove', dragMoveTouch, {passive: false});
+                square.addEventListener('touchend', dragEndTouch);
+                
+                square.addEventListener('dragstart', dragStart);
+                square.addEventListener('dragover', dragOver);
+                square.addEventListener('dragenter', dragEnter);
+                square.addEventListener('dragleave', dragLeave);
+                square.addEventListener('drop', dragDrop);
+                square.addEventListener('dragend', dragEnd);
+            });
+            
+            setTimeout(() => checkAndClearMatches(), 100);
+        }
+
+        function dragStartTouch(e) {
+            if (!gameActive || isAnimating) return;
+            squareIdBeingDragged = parseInt(this.id);
+            draggedCandy = this.innerHTML;
+            this.classList.add('selected');
+        }
+
+        function dragMoveTouch(e) {
+            e.preventDefault();
+            if (!gameActive || isAnimating || squareIdBeingDragged === undefined) return;
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.classList.contains('cell')) {
+                squareIdBeingReplaced = parseInt(element.id);
+            }
+        }
+
+        function dragEndTouch(e) {
+            this.classList.remove('selected');
+            if (!gameActive || isAnimating) return;
+            if (squareIdBeingReplaced !== undefined && squareIdBeingReplaced !== squareIdBeingDragged) {
+                let targetSquare = squares[squareIdBeingReplaced];
+                replacedCandy = targetSquare.innerHTML;
+                processSwap(this, targetSquare);
+            }
+            squareIdBeingReplaced = null;
+            squareIdBeingDragged = null;
+        }
+
+        function dragStart(e) {
+            if (!gameActive || isAnimating) {
+                e.preventDefault();
+                return;
+            }
+            draggedCandy = this.innerHTML;
+            squareIdBeingDragged = parseInt(this.id);
+            this.classList.add('selected');
+        }
+
+        function dragOver(e) { e.preventDefault(); }
+        function dragEnter(e) { e.preventDefault(); }
+        function dragLeave() { }
+
+        function dragDrop() {
+            if (!gameActive || isAnimating) return;
+            replacedCandy = this.innerHTML;
+            squareIdBeingReplaced = parseInt(this.id);
+        }
+
+        function dragEnd() {
+            this.classList.remove('selected');
+            if (!gameActive || isAnimating) return;
+            if (squareIdBeingReplaced || squareIdBeingReplaced === 0) {
+                let targetSquare = squares[squareIdBeingReplaced];
+                processSwap(this, targetSquare);
+            }
+            squareIdBeingReplaced = null;
+            squareIdBeingDragged = null;
+        }
+        
+        function processSwap(draggedElement, replacedElement) {
+            let validMoves = [
+                squareIdBeingDragged - 1, 
+                squareIdBeingDragged + 1, 
+                squareIdBeingDragged - width, 
+                squareIdBeingDragged + width
+            ];
+            
+            if (squareIdBeingDragged % width === 0) validMoves = validMoves.filter(m => m !== squareIdBeingDragged - 1);
+            if ((squareIdBeingDragged + 1) % width === 0) validMoves = validMoves.filter(m => m !== squareIdBeingDragged + 1);
+
+            let validMove = validMoves.includes(squareIdBeingReplaced);
+
+            if (squareIdBeingReplaced !== null && validMove) {
+                draggedElement.innerHTML = replacedCandy;
+                replacedElement.innerHTML = draggedCandy;
+                
+                isAnimating = true;
+                
+                setTimeout(() => {
+                    if (!checkAndClearMatches()) {
+                        // Invalid move
+                        draggedElement.innerHTML = draggedCandy;
+                        replacedElement.innerHTML = replacedCandy;
+                        isAnimating = false;
+                    } else {
+                        // Valid move, deduct a move
+                        if (!isInitializing) {
+                            moves--;
+                            movesElement.innerText = moves;
+                        }
+                    }
+                }, 100);
+            }
+        }
+
+        function checkAndClearMatches() {
+            let hasMatch = false;
+            let toClear = new Set();
+            
+            // Rows
+            for (let i = 0; i < 64; i++) {
+                let rowOfThree = [i, i+1, i+2];
+                let decidedEmoji = squares[i].innerHTML;
+                const isBlank = decidedEmoji === '';
+                const notValid = [6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55, 62, 63];
+                
+                if (notValid.includes(i)) continue;
+
+                if (!isBlank && rowOfThree.every(index => squares[index].innerHTML === decidedEmoji)) {
+                    hasMatch = true;
+                    rowOfThree.forEach(index => toClear.add(index));
+                }
+            }
+
+            // Columns
+            for (let i = 0; i < 48; i++) {
+                let columnOfThree = [i, i+width, i+width*2];
+                let decidedEmoji = squares[i].innerHTML;
+                const isBlank = decidedEmoji === '';
+
+                if (!isBlank && columnOfThree.every(index => squares[index].innerHTML === decidedEmoji)) {
+                    hasMatch = true;
+                    columnOfThree.forEach(index => toClear.add(index));
+                }
+            }
+
+            if (hasMatch) {
+                isAnimating = true;
+                if (!isInitializing) {
+                    score += toClear.size * 10;
+                    scoreElement.innerText = score;
+                }
+                toClear.forEach(index => {
+                    squares[index].innerHTML = '';
+                    squares[index].classList.add('popping');
+                    setTimeout(() => squares[index].classList.remove('popping'), 300);
+                });
+                setTimeout(moveDown, 300);
+            } else {
+                if (isInitializing) {
+                    isInitializing = false;
+                }
+                isAnimating = false;
+                
+                // Check for game over after animations finish
+                if (gameActive && moves <= 0 && !hasMatch) {
+                    gameOver();
+                }
+            }
+
+            return hasMatch;
+        }
+
+        function moveDown() {
+            let moved = false;
+            
+            // Move existing down
+            for (let i = 55; i >= 0; i--) {
+                if (squares[i + width].innerHTML === '' && squares[i].innerHTML !== '') {
+                    squares[i + width].innerHTML = squares[i].innerHTML;
+                    squares[i].innerHTML = '';
+                    squares[i + width].classList.add('falling');
+                    setTimeout(() => squares[i + width].classList.remove('falling'), 350);
+                    moved = true;
+                }
+            }
+            
+            // Fill top row
+            for (let i = 0; i < width; i++) {
+                if (squares[i].innerHTML === '') {
+                    let randomEmoji = Math.floor(Math.random() * emojis.length);
+                    squares[i].innerHTML = emojis[randomEmoji];
+                    squares[i].classList.add('falling');
+                    setTimeout(() => squares[i].classList.remove('falling'), 350);
+                    moved = true;
+                }
+            }
+
+            if (moved) {
+                setTimeout(moveDown, 400); // Wait for fall animation
+            } else {
+                checkAndClearMatches();
+            }
+        }
+
+        // Initialize state on load
+        loadState();
+    </script>
+</body>
+</html>

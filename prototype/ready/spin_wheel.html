@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floki Spin & Win</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #f3ba2f; /* Crypto yellow/gold */
+            margin-bottom: 5px;
+        }
+        p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background-color: #1f1f1f;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .balance {
+            color: #4caf50;
+        }
+        .wheel-container {
+            position: relative;
+            margin: 20px auto;
+            width: 300px;
+            height: 300px;
+        }
+        canvas {
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(243, 186, 47, 0.3);
+        }
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #f3ba2f;
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .center-peg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-color: #1a1a1a;
+            border: 4px solid #f3ba2f;
+            border-radius: 50%;
+            z-index: 5;
+        }
+        .play-btn {
+            background-color: #4caf50;
+            color: white;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-bottom: 10px;
+        }
+        .play-btn:hover:not(:disabled) {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        .play-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .play-btn:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        .dev-controls {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+        .dev-btn {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .dev-btn:hover {
+            background-color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Floki Daily Spin</h1>
+    
+    <div class="stats">
+        <div>Balance: <span class="balance" id="balance-display">0</span> Floki</div>
+        <div>Cost: <span id="cost-display">Free</span></div>
+    </div>
+    
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="center-peg"></div>
+    </div>
+
+    <button class="play-btn" id="start-btn" onclick="spin()">Spin Wheel</button>
+    
+    <div class="message" id="message-display">Claim your free daily spin!</div>
+
+    <div class="dev-controls">
+        <button class="dev-btn" onclick="resetFreeSpin()">Dev: Reset Daily Spin Limit</button>
+    </div>
+</div>
+
+<script>
+    // Game State
+    let balance = parseInt(localStorage.getItem('flokiBalance')) || 0;
+    let isSpinning = false;
+    let currentRotation = 0;
+    
+    // Elements
+    const balanceDisplay = document.getElementById('balance-display');
+    const costDisplay = document.getElementById('cost-display');
+    const startBtn = document.getElementById('start-btn');
+    const messageDisplay = document.getElementById('message-display');
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+
+    // Wheel configuration
+    const slices = [
+        { label: '0', color: '#ff4d4d', value: 0 },
+        { label: '1', color: '#4da6ff', value: 1 },
+        { label: '5', color: '#4dff4d', value: 5 },
+        { label: '50', color: '#ffb366', value: 50 },
+        { label: '100', color: '#ff4da6', value: 100 },
+        { label: '500', color: '#b366ff', value: 500 },
+        { label: '0', color: '#ff4d4d', value: 0 },
+        { label: '1', color: '#4da6ff', value: 1 },
+        { label: '5', color: '#4dff4d', value: 5 },
+        { label: '50', color: '#ffb366', value: 50 },
+        { label: '100', color: '#ff4da6', value: 100 },
+        { label: '1', color: '#4da6ff', value: 1 },
+    ];
+    
+    const numSlices = slices.length;
+    const arc = Math.PI * 2 / numSlices;
+    const radius = 150;
+
+    // Draw initial wheel
+    function drawWheel(rotation = 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(150, 150);
+        ctx.rotate(rotation);
+
+        for (let i = 0; i < numSlices; i++) {
+            const startAngle = i * arc - Math.PI / 2;
+            const endAngle = startAngle + arc;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, radius, startAngle, endAngle);
+            ctx.fillStyle = slices[i].color;
+            ctx.fill();
+            
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#2d2d2d';
+            ctx.stroke();
+
+            // Draw text
+            ctx.save();
+            ctx.rotate(startAngle + arc / 2);
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1a1a1a';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.fillText(slices[i].label, radius - 20, 0);
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function isFreeSpinAvailable() {
+        const lastFreeSpin = localStorage.getItem('lastFreeSpinDate');
+        const today = new Date().toDateString();
+        return lastFreeSpin !== today;
+    }
+
+    function updateUI() {
+        balanceDisplay.textContent = balance;
+        localStorage.setItem('flokiBalance', balance);
+        
+        if (isFreeSpinAvailable()) {
+            startBtn.disabled = false;
+            startBtn.textContent = "Spin for Free";
+            costDisplay.textContent = "Free";
+            messageDisplay.textContent = "Claim your free daily spin!";
+            messageDisplay.style.color = "white";
+        } else {
+            startBtn.disabled = true;
+            startBtn.textContent = "Come Back Tomorrow";
+            costDisplay.textContent = "-";
+            messageDisplay.textContent = "You have already used your free spin today.";
+            messageDisplay.style.color = "#aaaaaa";
+        }
+    }
+
+    function spin() {
+        if (isSpinning) return;
+        if (!isFreeSpinAvailable()) return;
+        
+        // Mark as played today
+        localStorage.setItem('lastFreeSpinDate', new Date().toDateString());
+        updateUI(); // Disable button immediately
+        
+        isSpinning = true;
+        messageDisplay.textContent = "Spinning...";
+        messageDisplay.style.color = "#f3ba2f";
+        
+        // Determine target prize based on requested odds
+        // 1x 500 (1%)
+        // 7x 100 (7%)
+        // 12x 50 (12%)
+        // 30x 5 (30%)
+        // 30x 1 (30%)
+        // 20x 0 (20%)
+        // Average EV = 19.8 Floki
+        
+        const rand = Math.random() * 100;
+        let targetPrize = 0;
+        
+        if (rand < 1) targetPrize = 500;
+        else if (rand < 8) targetPrize = 100;
+        else if (rand < 20) targetPrize = 50;
+        else if (rand < 50) targetPrize = 5;
+        else if (rand < 80) targetPrize = 1;
+        else targetPrize = 0;
+        
+        // Find all visual slices that match this prize
+        const matchingSlices = [];
+        for(let i=0; i<numSlices; i++) {
+            if(slices[i].value === targetPrize) {
+                matchingSlices.push(i);
+            }
+        }
+        
+        // Pick one randomly if there are multiple
+        const targetSliceIndex = matchingSlices[Math.floor(Math.random() * matchingSlices.length)];
+        
+        // Calculate target rotation
+        // We want the target slice to end up at the top (-Math.PI/2)
+        // Add random offset so it doesn't land exactly in the center of the slice
+        const randomOffset = (Math.random() - 0.5) * arc * 0.8;
+        
+        // Base rotation to bring slice to top: -(targetSliceIndex + 0.5) * arc
+        const baseTarget = -(targetSliceIndex + 0.5) * arc;
+        
+        // Add multiple full spins (e.g. 5 to 8)
+        const extraSpins = 5 + Math.floor(Math.random() * 4);
+        
+        // currentRotation might be very large from previous spins
+        const currentMod = currentRotation % (Math.PI * 2);
+        
+        const targetRotation = currentRotation - currentMod + (extraSpins * Math.PI * 2) + baseTarget + randomOffset;
+        
+        // Animate
+        const duration = 4000 + Math.random() * 2000; // 4-6 seconds
+        const startTime = performance.now();
+        const startRotation = currentRotation;
+        
+        function animate(time) {
+            const elapsed = time - startTime;
+            let progress = elapsed / duration;
+            
+            if (progress > 1) progress = 1;
+            
+            // Ease out cubic: f(t) = 1 - (1 - t)^3
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            currentRotation = startRotation + (targetRotation - startRotation) * easeOut;
+            drawWheel(currentRotation);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                isSpinning = false;
+                
+                // Payout
+                balance += targetPrize;
+                updateUI();
+                
+                if (targetPrize > 0) {
+                    messageDisplay.textContent = `🎉 You won ${targetPrize} Floki!`;
+                    messageDisplay.style.color = "#4caf50";
+                } else {
+                    messageDisplay.textContent = "Better luck next time! 0 Floki won.";
+                    messageDisplay.style.color = "#ff4d4d";
+                }
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    function resetFreeSpin() {
+        localStorage.removeItem('lastFreeSpinDate');
+        updateUI();
+    }
+
+    // Initialize
+    drawWheel(0);
+    updateUI();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flappy Floki</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #87CEEB; /* Sky blue */
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; /* Prevent zooming and scrolling */
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 1px 1px 2px white;
+        }
+        .score-display {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            text-align: center;
+            font-size: 60px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            z-index: 10;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 20;
+        }
+        .panel {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 80%;
+        }
+        h1 {
+            margin-top: 0;
+            color: #d35400;
+        }
+        p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s, background 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #game-over-screen, #start-screen {
+            display: none;
+        }
+        .cost-note {
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <div class="header">
+            <div id="balance">Floki: 1000</div>
+        </div>
+        <div class="score-display" id="score">0</div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay" style="display: flex;">
+        <div class="panel">
+            <h1>Flappy Floki</h1>
+            <p>Tap to flap. Dodge the dragon pillars!</p>
+            <p class="cost-note">Cost: 50 Floki per game<br>Reward: 1 point per pillar passed</p>
+            <button id="start-btn">Play Game (50 Floki)</button>
+            <button id="add-funds-btn" style="background:#27ae60; display:none;">Add 1000 Floki</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay">
+        <div class="panel">
+            <h1>Game Over!</h1>
+            <p>Score: <span id="final-score">0</span></p>
+            <p class="cost-note">Cost: 50 Floki to retry</p>
+            <button id="restart-btn">Play Again (50 Floki)</button>
+            <button id="add-funds-retry-btn" style="background:#27ae60; display:none;">Add 1000 Floki</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const balanceEl = document.getElementById('balance');
+    const scoreEl = document.getElementById('score');
+    const finalScoreEl = document.getElementById('final-score');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const addFundsBtn = document.getElementById('add-funds-btn');
+    const addFundsRetryBtn = document.getElementById('add-funds-retry-btn');
+
+    // Game variables
+    let gameLoop;
+    let frames = 0;
+    let gameState = 'start'; // start, playing, gameover
+    let score = 0;
+    let balance = 1000;
+    const ENTRY_FEE = 50;
+
+    // Resize canvas
+    function resizeCanvas() {
+        const container = document.getElementById('game-container');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Floki Character
+    const floki = {
+        x: 0,
+        y: 0,
+        size: 18,
+        velocity: 0,
+        gravity: 0.25,
+        jump: -6,
+        wingAngle: 0,
+        rotation: 0,
+        
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            // Rotation based on velocity
+            this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.1)));
+            ctx.rotate(this.rotation);
+
+            // Flapping mechanics
+            if (gameState === 'playing') {
+                this.wingAngle += this.velocity < 0 ? 0.6 : 0.1;
+            }
+
+            // Draw Wings (Back)
+            ctx.fillStyle = '#FFF';
+            ctx.save();
+            let flapOffset = Math.sin(this.wingAngle) * 20;
+            ctx.translate(-this.size + 5, 0);
+            ctx.rotate(flapOffset * Math.PI / 180);
+            ctx.beginPath();
+            ctx.ellipse(-8, 0, 10, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#CCC';
+            ctx.stroke();
+            ctx.restore();
+
+            // Draw Body
+            ctx.fillStyle = '#f39c12'; // Orange
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Face
+            ctx.fillStyle = '#000';
+            // Eyes
+            ctx.beginPath();
+            ctx.arc(6, -4, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            // Smile
+            ctx.beginPath();
+            ctx.arc(6, 2, 6, 0.1, Math.PI - 0.1, false);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw Viking Hat
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath();
+            ctx.arc(0, -this.size + 4, this.size + 2, Math.PI, 0);
+            ctx.fill();
+            
+            // Hat Rim
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillRect(-this.size - 4, -this.size + 2, (this.size + 4) * 2, 4);
+
+            // Horns
+            ctx.fillStyle = '#ecf0f1';
+            // Left Horn
+            ctx.beginPath();
+            ctx.moveTo(-this.size + 2, -this.size);
+            ctx.quadraticCurveTo(-this.size - 5, -this.size - 10, -this.size - 10, -this.size - 5);
+            ctx.quadraticCurveTo(-this.size - 2, -this.size - 2, -this.size + 8, -this.size + 2);
+            ctx.fill();
+            // Right Horn
+            ctx.beginPath();
+            ctx.moveTo(this.size - 2, -this.size);
+            ctx.quadraticCurveTo(this.size + 5, -this.size - 10, this.size + 10, -this.size - 5);
+            ctx.quadraticCurveTo(this.size + 2, -this.size - 2, this.size - 8, -this.size + 2);
+            ctx.fill();
+
+            ctx.restore();
+        },
+        
+        update() {
+            this.velocity += this.gravity;
+            this.y += this.velocity;
+            
+            // Floor collision
+            if (this.y + this.size >= canvas.height) {
+                this.y = canvas.height - this.size;
+                gameOver();
+            }
+            
+            // Ceiling collision
+            if (this.y - this.size <= 0) {
+                this.y = this.size;
+                this.velocity = 0;
+            }
+        },
+        
+        flap() {
+            this.velocity = this.jump;
+        },
+        
+        reset() {
+            this.x = canvas.width / 3;
+            this.y = canvas.height / 2;
+            this.velocity = 0;
+            this.wingAngle = 0;
+        }
+    };
+
+    // Dragon Pillars
+    const pillars = {
+        items: [],
+        width: 60,
+        gap: 150,
+        speed: 3,
+        
+        draw() {
+            for (let i = 0; i < this.items.length; i++) {
+                let p = this.items[i];
+                
+                // Draw Pillar bodies (Scaly green texture)
+                ctx.fillStyle = '#27ae60';
+                
+                // Top Pillar
+                ctx.fillRect(p.x, 0, this.width, p.top);
+                // Pillar Details (scales)
+                ctx.fillStyle = '#2ecc71';
+                for(let sy = 0; sy < p.top - 20; sy += 20) {
+                    ctx.beginPath();
+                    ctx.arc(p.x + this.width/2, sy, this.width/2, 0, Math.PI);
+                    ctx.fill();
+                }
+
+                // Bottom Pillar
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(p.x, p.top + this.gap, this.width, canvas.height - p.top - this.gap);
+                // Pillar Details
+                ctx.fillStyle = '#2ecc71';
+                for(let sy = p.top + this.gap + 20; sy < canvas.height; sy += 20) {
+                    ctx.beginPath();
+                    ctx.arc(p.x + this.width/2, sy, this.width/2, Math.PI, 0);
+                    ctx.fill();
+                }
+
+                // Draw Dragon Heads at openings
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Top Dragon Head (facing down)
+                ctx.save();
+                ctx.translate(p.x + this.width/2, p.top - 5);
+                ctx.fillText('🐲', 0, 0);
+                ctx.restore();
+                
+                // Bottom Dragon Head (facing up)
+                ctx.save();
+                ctx.translate(p.x + this.width/2, p.top + this.gap + 5);
+                ctx.fillText('🐲', 0, 0);
+                ctx.restore();
+            }
+        },
+        
+        update() {
+            // Add new pillar
+            if (frames % 100 === 0) {
+                // Random top pillar height
+                let minTop = 50;
+                let maxTop = canvas.height - this.gap - 50;
+                let topHeight = Math.random() * (maxTop - minTop) + minTop;
+                
+                this.items.push({
+                    x: canvas.width,
+                    top: topHeight,
+                    passed: false
+                });
+            }
+            
+            // Move pillars
+            for (let i = 0; i < this.items.length; i++) {
+                let p = this.items[i];
+                p.x -= this.speed;
+                
+                // Collision detection
+                // Check X collision
+                if (floki.x + floki.size > p.x && floki.x - floki.size < p.x + this.width) {
+                    // Check Y collision (top or bottom pillar)
+                    if (floki.y - floki.size < p.top || floki.y + floki.size > p.top + this.gap) {
+                        gameOver();
+                    }
+                }
+                
+                // Score point
+                if (p.x + this.width < floki.x && !p.passed) {
+                    score++;
+                    scoreEl.innerText = score;
+                    p.passed = true;
+                }
+            }
+            
+            // Remove off-screen pillars
+            if (this.items.length > 0 && this.items[0].x + this.width < 0) {
+                this.items.shift();
+            }
+        },
+        
+        reset() {
+            this.items = [];
+        }
+    };
+
+    // Background details
+    const background = {
+        clouds: [
+            { x: 100, y: 100, speed: 0.5 },
+            { x: 300, y: 150, speed: 0.3 },
+            { x: 500, y: 80, speed: 0.6 }
+        ],
+        draw() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            this.clouds.forEach(c => {
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, 30, Math.PI * 0.5, Math.PI * 1.5);
+                ctx.arc(c.x + 30, c.y - 15, 35, Math.PI * 1, Math.PI * 2);
+                ctx.arc(c.x + 60, c.y, 30, Math.PI * 1.5, Math.PI * 0.5);
+                ctx.fill();
+            });
+        },
+        update() {
+            this.clouds.forEach(c => {
+                c.x -= c.speed;
+                if (c.x < -100) c.x = canvas.width + 50;
+            });
+        }
+    }
+
+    function updateBalanceDisplay() {
+        balanceEl.innerText = `Floki: ${balance}`;
+        const canAfford = balance >= ENTRY_FEE;
+        
+        startBtn.disabled = !canAfford;
+        restartBtn.disabled = !canAfford;
+        
+        if (!canAfford) {
+            addFundsBtn.style.display = 'block';
+            addFundsRetryBtn.style.display = 'block';
+            startBtn.innerText = 'Insufficient Funds';
+            restartBtn.innerText = 'Insufficient Funds';
+        } else {
+            addFundsBtn.style.display = 'none';
+            addFundsRetryBtn.style.display = 'none';
+            startBtn.innerText = `Play Game (${ENTRY_FEE} Floki)`;
+            restartBtn.innerText = `Play Again (${ENTRY_FEE} Floki)`;
+        }
+    }
+
+    function startGame() {
+        if (balance < ENTRY_FEE) return;
+        
+        balance -= ENTRY_FEE;
+        updateBalanceDisplay();
+        
+        floki.reset();
+        pillars.reset();
+        score = 0;
+        scoreEl.innerText = score;
+        frames = 0;
+        
+        gameState = 'playing';
+        startScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+        scoreEl.style.display = 'block';
+        
+        if (gameLoop) cancelAnimationFrame(gameLoop);
+        loop();
+    }
+
+    function gameOver() {
+        gameState = 'gameover';
+        finalScoreEl.innerText = score;
+        gameOverScreen.style.display = 'flex';
+        scoreEl.style.display = 'none';
+        updateBalanceDisplay();
+    }
+
+    function loop() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw & Update background
+        background.draw();
+        
+        if (gameState === 'playing') {
+            background.update();
+            pillars.update();
+            floki.update();
+            frames++;
+        }
+        
+        pillars.draw();
+        floki.draw();
+
+        if (gameState === 'playing' || gameState === 'start') {
+            gameLoop = requestAnimationFrame(loop);
+        }
+    }
+
+    // Controls
+    function handleTap(e) {
+        if (e) e.preventDefault();
+        if (gameState === 'playing') {
+            floki.flap();
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (gameState === 'playing') {
+                handleTap();
+            } else if (gameState === 'start' && balance >= ENTRY_FEE) {
+                startGame();
+            } else if (gameState === 'gameover' && balance >= ENTRY_FEE) {
+                startGame();
+            }
+        }
+    });
+
+    canvas.addEventListener('touchstart', handleTap, {passive: false});
+    canvas.addEventListener('mousedown', handleTap);
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    function addFunds() {
+        balance += 1000;
+        updateBalanceDisplay();
+    }
+    addFundsBtn.addEventListener('click', addFunds);
+    addFundsRetryBtn.addEventListener('click', addFunds);
+
+    // Initial setup
+    floki.reset();
+    updateBalanceDisplay();
+    loop(); // Start background idle loop
+</script>
+
+</body>
+</html>

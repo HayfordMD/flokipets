@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Netwalk Floki</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top, #1a1a2e, #16213e, #0f3460);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 500px;
+            padding: 15px 20px;
+            margin-top: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-sizing: border-box;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .stat-value.floki { color: #f9a826; }
+        .stat-value.time { color: #00ffcc; }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #grid {
+            display: grid;
+            gap: 4px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: box-shadow 0.5s;
+        }
+
+        .tile {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .tile:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tile svg line, .tile svg rect, .tile svg circle {
+            transition: stroke 0.3s, fill 0.3s;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #16213e, #1a1a2e);
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 80%;
+            width: 300px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #00ffcc;
+        }
+
+        .btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn.secondary {
+            background: transparent;
+            border: 2px solid #e94560;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        
+        .nav-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .nav-back:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="nav-back">← Back</a>
+
+    <div class="top-bar">
+        <div class="stat">
+            <span class="stat-label">Level</span>
+            <span class="stat-value" id="ui-level">1</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Floki</span>
+            <span class="stat-value floki" id="ui-floki">100</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Time</span>
+            <span class="stat-value time" id="ui-time">30s</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div id="grid"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal" style="display: flex;">
+        <div class="modal-content">
+            <h2 id="modal-title">Netwalk</h2>
+            <p id="modal-text">Connect all terminals to the server in 30 seconds!</p>
+            <button class="btn" id="modal-btn">Loading...</button>
+        </div>
+    </div>
+
+    <script>
+        let level = 1;
+        let floki = 100; // Starting Floki for testing
+        let timeLeft = 30;
+        let timerInterval = null;
+        let gameActive = false;
+
+        let grid = [];
+        let width = 5;
+        let height = 5;
+        
+        const gridEl = document.getElementById('grid');
+
+        function hasFreePlay() {
+            let lastPlay = localStorage.getItem('netwalkLastFreePlay');
+            let today = new Date().toDateString();
+            return lastPlay !== today;
+        }
+
+        function consumeFreePlay() {
+            localStorage.setItem('netwalkLastFreePlay', new Date().toDateString());
+        }
+
+        function showStartScreen() {
+            gridEl.innerHTML = ''; // Clear grid
+            let isFree = hasFreePlay();
+            let btnText = isFree ? 'Start Free Daily Play' : 'Play (50 Floki)';
+            
+            showModal('Netwalk', 'Connect all terminals to the central server before the 30-second timer runs out.', btnText, (e) => {
+                if (isFree) {
+                    consumeFreePlay();
+                    startSession();
+                } else if (floki >= 50) {
+                    floki -= 50;
+                    startSession();
+                } else {
+                    let originalText = e.target.innerText;
+                    e.target.innerText = "Not Enough Floki!";
+                    e.target.style.background = "#555";
+                    setTimeout(() => {
+                        e.target.innerText = originalText;
+                        e.target.style.background = "#e94560";
+                    }, 2000);
+                }
+            });
+        }
+
+        function startSession() {
+            level = 1;
+            hideModal();
+            initLevel();
+        }
+
+        function getReward(lvl) {
+            if (lvl === 1) return 5;
+            if (lvl === 2) return 10;
+            if (lvl === 3) return 30;
+            if (lvl >= 4) return 50;
+            return 0;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 30;
+            document.getElementById('ui-time').innerText = timeLeft + 's';
+            timerInterval = setInterval(() => {
+                if(!gameActive) return;
+                timeLeft--;
+                document.getElementById('ui-time').innerText = timeLeft + 's';
+                if (timeLeft <= 0) {
+                    handleLoss();
+                }
+            }, 1000);
+        }
+
+        function initLevel() {
+            let size = Math.min(4 + level, 8);
+            width = size;
+            height = size;
+            gameActive = true;
+            
+            grid = generateGrid(width, height);
+            scrambleGrid(grid);
+            
+            renderGrid();
+            updateUI();
+            startTimer();
+        }
+
+        function generateGrid(w, h) {
+            let newGrid = Array.from({length: h}, () => Array.from({length: w}, () => ({
+                baseConnections: 0,
+                rotation: 0,
+                absRotation: 0,
+                isServer: false,
+                connected: false
+            })));
+            
+            let startX = Math.floor(w/2);
+            let startY = Math.floor(h/2);
+            newGrid[startY][startX].isServer = true;
+            
+            let visited = new Set();
+            visited.add(`${startX},${startY}`);
+            
+            let walls = [];
+            const addWalls = (x, y) => {
+                if (y > 0) walls.push({x1: x, y1: y, x2: x, y2: y-1, dir: 1, opDir: 4}); // N
+                if (x < w-1) walls.push({x1: x, y1: y, x2: x+1, y2: y, dir: 2, opDir: 8}); // E
+                if (y < h-1) walls.push({x1: x, y1: y, x2: x, y2: y+1, dir: 4, opDir: 1}); // S
+                if (x > 0) walls.push({x1: x, y1: y, x2: x-1, y2: y, dir: 8, opDir: 2}); // W
+            };
+            
+            addWalls(startX, startY);
+            
+            while(walls.length > 0) {
+                let randIdx = Math.floor(Math.random() * walls.length);
+                let wItem = walls.splice(randIdx, 1)[0];
+                
+                let key2 = `${wItem.x2},${wItem.y2}`;
+                if (!visited.has(key2)) {
+                    visited.add(key2);
+                    newGrid[wItem.y1][wItem.x1].baseConnections |= wItem.dir;
+                    newGrid[wItem.y2][wItem.x2].baseConnections |= wItem.opDir;
+                    addWalls(wItem.x2, wItem.y2);
+                }
+            }
+            return newGrid;
+        }
+
+        function getTileType(bits) {
+            if (bits === 0 || bits === 15) return 'fixed';
+            if (bits === 5 || bits === 10) return 'line';
+            return 'normal';
+        }
+
+        function scrambleGrid(targetGrid) {
+            let h = targetGrid.length;
+            let w = targetGrid[0].length;
+            
+            for(let y=0; y<h; y++) {
+                for(let x=0; x<w; x++) {
+                    let t = targetGrid[y][x];
+                    let type = getTileType(t.baseConnections);
+                    if (type !== 'fixed') {
+                        t.rotation = Math.floor(Math.random() * 4);
+                        t.absRotation = t.rotation;
+                    }
+                }
+            }
+        }
+
+        function renderGrid() {
+            gridEl.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
+            gridEl.innerHTML = '';
+            
+            checkWinCondition(); 
+            
+            for(let y=0; y<height; y++) {
+                for(let x=0; x<width; x++) {
+                    let tile = grid[y][x];
+                    let tileEl = document.createElement('div');
+                    tileEl.className = 'tile';
+                    tileEl.dataset.x = x;
+                    tileEl.dataset.y = y;
+                    tileEl.style.transform = `rotate(${tile.absRotation * 90}deg)`;
+                    tileEl.innerHTML = createTileSVG(tile.baseConnections, tile.isServer, tile.connected);
+                    
+                    tileEl.addEventListener('click', () => onTileClick(x, y, tileEl));
+                    gridEl.appendChild(tileEl);
+                }
+            }
+        }
+
+        function createTileSVG(bits, isServer, isConnected) {
+            let color = isConnected ? '#00ffcc' : '#0f52ba';
+            if (isServer) color = '#ff00ff';
+            
+            let svg = `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">`;
+            
+            if (isServer) {
+                svg += `<rect x="25" y="25" width="50" height="50" fill="${color}" rx="8"/>`;
+                svg += `<rect x="35" y="35" width="30" height="30" fill="#fff" rx="4"/>`;
+            } else {
+                svg += `<circle cx="50" cy="50" r="14" fill="${color}"/>`;
+            }
+            
+            let strokeWidth = 14;
+            if (bits & 1) svg += `<line x1="50" y1="50" x2="50" y2="-5" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+            if (bits & 2) svg += `<line x1="50" y1="50" x2="105" y2="50" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+            if (bits & 4) svg += `<line x1="50" y1="50" x2="50" y2="105" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+            if (bits & 8) svg += `<line x1="50" y1="50" x2="-5" y2="50" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function updateConnections(targetGrid) {
+            let h = targetGrid.length;
+            let w = targetGrid[0].length;
+            
+            for(let y=0; y<h; y++) {
+                for(let x=0; x<w; x++) {
+                    targetGrid[y][x].connected = false;
+                }
+            }
+            
+            let serverX = Math.floor(w/2);
+            let serverY = Math.floor(h/2);
+            
+            let q = [{x: serverX, y: serverY}];
+            targetGrid[serverY][serverX].connected = true;
+            
+            let connectedCount = 1;
+            
+            while(q.length > 0) {
+                let {x, y} = q.shift();
+                let currentBits = rotateBits(targetGrid[y][x].baseConnections, targetGrid[y][x].rotation);
+                
+                const checkNeighbor = (nx, ny, dir, opDir) => {
+                    if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                        if (!targetGrid[ny][nx].connected) {
+                            let neighborBits = rotateBits(targetGrid[ny][nx].baseConnections, targetGrid[ny][nx].rotation);
+                            if ((currentBits & dir) && (neighborBits & opDir)) {
+                                targetGrid[ny][nx].connected = true;
+                                connectedCount++;
+                                q.push({x: nx, y: ny});
+                            }
+                        }
+                    }
+                };
+                
+                checkNeighbor(x, y-1, 1, 4); // N -> S
+                checkNeighbor(x+1, y, 2, 8); // E -> W
+                checkNeighbor(x, y+1, 4, 1); // S -> N
+                checkNeighbor(x-1, y, 8, 2); // W -> E
+            }
+            return connectedCount;
+        }
+
+        function rotateBits(bits, rot) {
+            let r = rot % 4;
+            return ((bits << r) | (bits >> (4 - r))) & 15;
+        }
+
+        function checkWinCondition() {
+            let connectedCount = updateConnections(grid);
+            return connectedCount === width * height;
+        }
+
+        let isAnimating = false;
+
+        function onTileClick(x, y, tileEl) {
+            if (!gameActive || isAnimating) return;
+            
+            let tile = grid[y][x];
+            if (tile.baseConnections === 0 || tile.baseConnections === 15) return;
+            
+            tile.rotation = (tile.rotation + 1) % 4;
+            tile.absRotation++;
+            tileEl.style.transform = `rotate(${tile.absRotation * 90}deg)`;
+            
+            let isWin = checkWinCondition();
+            updateAllTileSVGs();
+            
+            if (isWin) {
+                isAnimating = true;
+                gameActive = false;
+                clearInterval(timerInterval);
+                setTimeout(() => handleWin(), 400);
+            }
+        }
+
+        function updateAllTileSVGs() {
+            let tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tileEl => {
+                let x = parseInt(tileEl.dataset.x);
+                let y = parseInt(tileEl.dataset.y);
+                let tile = grid[y][x];
+                tileEl.innerHTML = createTileSVG(tile.baseConnections, tile.isServer, tile.connected);
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('ui-level').innerText = level;
+            document.getElementById('ui-floki').innerText = floki;
+            document.getElementById('ui-time').innerText = timeLeft + 's';
+        }
+
+        function handleWin() {
+            gridEl.style.boxShadow = "0 0 40px #00ffcc, inset 0 0 20px #00ffcc";
+            setTimeout(() => {
+                let reward = getReward(level);
+                floki += reward;
+                level++;
+                showModal(`Level Cleared!`, `You earned ${reward} Floki!`, 'Next Level', () => {
+                    gridEl.style.boxShadow = "inset 0 0 20px rgba(0, 0, 0, 0.5)";
+                    isAnimating = false;
+                    initLevel();
+                    hideModal();
+                });
+                updateUI();
+            }, 600);
+        }
+
+        function handleLoss() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            let isFree = hasFreePlay();
+            let btnText = isFree ? 'Use Free Daily Play' : 'Play Again (50 Floki)';
+            
+            showModal('Time is Up!', 'You ran out of time.', btnText, (e) => {
+                if (isFree) {
+                    consumeFreePlay();
+                    startSession();
+                } else if (floki >= 50) {
+                    floki -= 50;
+                    startSession();
+                } else {
+                    let originalText = e.target.innerText;
+                    e.target.innerText = "Not Enough Floki!";
+                    e.target.style.background = "#555";
+                    setTimeout(() => {
+                        e.target.innerText = originalText;
+                        e.target.style.background = "#e94560";
+                    }, 2000);
+                }
+            });
+            updateUI();
+        }
+
+        function showModal(title, text, btnText, btnAction) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            let btn = document.getElementById('modal-btn');
+            btn.innerText = btnText;
+            btn.onclick = btnAction;
+            btn.style.background = "#e94560";
+            
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function hideModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Initialize Start Screen
+        showStartScreen();
+    </script>
+</body>
+</html>

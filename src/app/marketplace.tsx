@@ -93,6 +93,7 @@ export default function MarketplaceScreen() {
           )}
         </View>
 
+        <Button title="Go to Generator Vault" onPress={() => router.push('/marketplace/generator')} variant="primary" style={{marginBottom: 16}} />
         <Button title="Back to Dashboard" onPress={() => router.push('/dashboard')} variant="secondary" />
       </View>
     </SafeAreaView>
