@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { useActiveAccount, useSendTransaction, useReadContract } from "thirdweb/react";
+import { useActiveAccount, useReadContract } from "thirdweb/react";
 import { getContract, prepareContractCall } from "thirdweb";
 import { ACTIVE_CHAIN, FLOKI_CONTRACT_ADDRESS } from "@/lib/constants";
 import { client } from "@/lib/thirdweb";
+import { useWeb3Transaction } from "@/hooks/useWeb3Transaction";
+import { apiClient, showAlert } from '@/lib/utils';
 
 // Fallback if not set in .env
 const GENERATOR_CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_GENERATOR_ADDRESS || "0x0000000000000000000000000000000000000000";
@@ -14,7 +16,7 @@ const GENERATOR_CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_GENERATOR_ADDRESS || 
 export default function GeneratorScreen() {
   const router = useRouter();
   const activeAccount = useActiveAccount();
-  const { mutate: sendTx, isPending: isTxPending } = useSendTransaction();
+  const { executeTx, isPending: isTxPending } = useWeb3Transaction();
   
   const [gasAmount, setGasAmount] = useState("");
   const [flokiAmount, setFlokiAmount] = useState("");
@@ -50,16 +52,12 @@ export default function GeneratorScreen() {
         value: amountInWei
       });
 
-      sendTx(transaction, {
-        onSuccess: () => {
-          setGasAmount("");
-          Alert.alert("Success", "Gas deposited successfully!");
-        },
-        onError: (error) => {
-          console.error("Gas deposit failed:", error);
-          Alert.alert("Error", "Failed to deposit gas.");
-        }
-      });
+      executeTx(
+        transaction,
+        "Gas deposited successfully!",
+        "Failed to deposit gas.",
+        () => setGasAmount("")
+      );
     } catch (e) {
       console.error(e);
     }
@@ -76,16 +74,12 @@ export default function GeneratorScreen() {
         params: [amountInWei]
       });
 
-      sendTx(transaction, {
-        onSuccess: () => {
-          setFlokiAmount("");
-          Alert.alert("Success", "Floki deposited successfully!");
-        },
-        onError: (error) => {
-          console.error("Floki deposit failed:", error);
-          Alert.alert("Error", "Failed to deposit Floki. Did you approve?");
-        }
-      });
+      executeTx(
+        transaction,
+        "Floki deposited successfully!",
+        "Failed to deposit Floki. Did you approve?",
+        () => setFlokiAmount("")
+      );
     } catch (e) {
       console.error(e);
     }
@@ -96,22 +90,16 @@ export default function GeneratorScreen() {
     
     setIsConverting(true);
     try {
-      const response = await fetch('/api/generator/convert', {
+      const data = await apiClient('/api/generator/convert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: convertAmount })
       });
       
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert("Success", `Converted! On-chain Tx: ${data.txHash}`);
-        setConvertAmount("");
-      } else {
-        Alert.alert("Error", data.error || "Failed to convert Floki");
-      }
-    } catch (error) {
+      showAlert("Success", `Converted! On-chain Tx: ${data.txHash}`);
+      setConvertAmount("");
+    } catch (error: any) {
       console.error("Conversion API error", error);
-      Alert.alert("Error", "Network error occurred");
+      showAlert("Error", error.message || "Network error occurred");
     } finally {
       setIsConverting(false);
     }

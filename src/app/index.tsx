@@ -10,11 +10,14 @@ import { client, appWallets } from '@/lib/thirdweb';
 import { ACTIVE_CHAIN } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { BasePet } from '@/components/pets/BasePet';
+import { apiClient } from '@/lib/utils';
+import { useAppState } from '@/lib/globalState';
 
 type Providers = { email?: boolean; google?: boolean; emailOTP?: boolean };
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { refreshAuth } = useAppState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -39,8 +42,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/providers`)
-        .then(res => res.json())
+      apiClient('/api/auth/providers')
         .then(data => setProviders(data.providers || {}))
         .catch(() => setProviders({ email: true }));
     } else {
@@ -74,38 +76,22 @@ export default function HomeScreen() {
     setAuthError('');
     
     try {
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
-      const endpoint = isSignUp ? `${baseUrl}/api/auth/sign-up/email` : `${baseUrl}/api/auth/sign-in/email`;
+      const endpoint = isSignUp ? `/api/auth/sign-up/email` : `/api/auth/sign-in/email`;
       const body = isSignUp 
         ? JSON.stringify({ email, password, name, rememberMe })
         : JSON.stringify({ email, password, rememberMe });
 
       console.log(`Sending POST request to ${endpoint}`);
 
-      const res = await fetch(endpoint, {
+      await apiClient(endpoint, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
         body
       });
       
-      console.log("Response received with status:", res.status);
-      const data = await res.json();
-      console.log("Response data:", data);
-      
-      if (!res.ok) {
-        throw new Error(data.message || data.error || 'Authentication failed');
-      }
-      
       console.log("Auth successful! Attempting to navigate to /dashboard...");
-      if (Platform.OS === 'web') {
-        // Force a hard navigation on web to ensure cookies and states are freshly loaded
-        console.log("Using window.location.href for web routing...");
-        window.location.href = '/dashboard';
-      } else {
-        console.log("Using Expo Router replace for native routing...");
-        router.replace('/dashboard');
-      }
+      refreshAuth();
+      router.replace('/dashboard');
       console.log("Navigation command executed!");
     } catch (error: any) {
       console.error("Email auth failed:", error);

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, Alert, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
+import { showAlert, apiClient } from '@/lib/utils';
+import { useAppState } from '@/lib/globalState';
 
 export default function StoreScreen() {
   const router = useRouter();
   const { flokiBalance, ncbUser, activeAccount } = useAuth();
+  const { refreshAuth } = useAppState();
   
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,8 +18,7 @@ export default function StoreScreen() {
 
   const fetchItems = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/data/read/items`);
-      const data = await res.json();
+      const data = await apiClient('/api/data/read/items');
       if (Array.isArray(data)) {
         setItems(data);
       }
@@ -34,29 +36,15 @@ export default function StoreScreen() {
   const handlePurchase = async (itemId: string, itemName: string) => {
     setPurchasing(itemId);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/store/purchase`, {
+      await apiClient('/api/store/purchase', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId })
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to purchase item");
-      }
-      
-      if (Platform.OS !== 'web') {
-        Alert.alert("Success!", `You bought ${itemName}!`);
-      } else {
-        alert(`Success! You bought ${itemName}!`);
-        window.location.reload();
-      }
+      refreshAuth();
+      showAlert("Success!", `You bought ${itemName}!`);
     } catch (e: any) {
-      if (Platform.OS !== 'web') {
-        Alert.alert("Error", e.message);
-      } else {
-        alert("Error: " + e.message);
-      }
+      showAlert("Error", e.message);
     } finally {
       setPurchasing(null);
     }

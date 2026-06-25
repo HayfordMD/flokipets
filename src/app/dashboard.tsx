@@ -7,17 +7,20 @@ import { Card } from '@/components/ui/Card';
 import { BasePet } from '@/components/pets/BasePet';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
-import { Platform, Pressable } from 'react-native';
+import { Platform, Pressable, Modal, TouchableOpacity } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { ConnectButton } from "thirdweb/react";
 import { client, appWallets } from '@/lib/thirdweb';
 import { ACTIVE_CHAIN, MAX_OFFCHAIN_FLOKI } from "@/lib/constants";
 import { useFlokiBalance } from '@/hooks/useFlokiBalance';
+import { apiClient, showAlert } from '@/lib/utils';
+import { useAppState } from '@/lib/globalState';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { refreshAuth } = useAppState();
   const { flokiBalance: petFloki, ncbUser, loading, activeAccount, isAdmin } = useAuth();
   const { formattedBalance: onChainFloki, isLoading: isBalanceLoading } = useFlokiBalance();
-  const { flokiBalance, ncbUser: ncbUserAuth, loading: loadingAuth, activeAccount: activeAccountAuth } = useAuth(); // kept for compatibility if needed elsewhere, but using destructured above
 
   const displayBalance = activeAccount ? (isBalanceLoading ? "..." : onChainFloki) : petFloki;
   const isLimitReached = !activeAccount && petFloki >= MAX_OFFCHAIN_FLOKI;
@@ -35,15 +38,20 @@ export default function DashboardScreen() {
   const hasPet = ncbUser?.pets?.length > 0;
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isWalletModalVisible, setIsWalletModalVisible] = useState(false);
+
+  const handleCopyWallet = async () => {
+    if (activeAccount?.address) {
+      await Clipboard.setStringAsync(activeAccount.address);
+      showAlert('Success', 'Wallet address copied to clipboard!');
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
-      if (Platform.OS === 'web') {
-        window.location.reload();
-      } else {
-        router.replace('/');
-      }
+      await apiClient('/api/auth/sign-out', { method: 'POST' });
+      refreshAuth();
+      router.replace('/');
     } catch (e) {
       console.error(e);
     }
@@ -62,10 +70,10 @@ export default function DashboardScreen() {
             <Text style={styles.title}>Dashboard</Text>
             <Text style={{fontSize: 16, color: '#1E3A8A', fontWeight: 'bold'}}>Level 1 • Novice</Text>
           </View>
-          <View style={{alignItems: 'flex-end'}}>
+          <Pressable style={{alignItems: 'flex-end'}} onPress={() => setIsWalletModalVisible(true)}>
             <Text style={styles.balanceText}>{displayBalance} {activeAccount ? 'FLOKI' : 'Pet-Floki'}</Text>
             {activeAccount && <Text style={{fontSize: 10, color: '#10B981'}}>On-Chain (opBNB)</Text>}
-          </View>
+          </Pressable>
         </View>
 
         {isLimitReached && (
@@ -181,6 +189,36 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
       )}
+
+      {/* Wallet Modal */}
+      <Modal
+        visible={isWalletModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsWalletModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setIsWalletModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Wallet Details</Text>
+            {activeAccount ? (
+              <>
+                <Text style={styles.modalText}>Connected Address:</Text>
+                <Text style={styles.addressText} numberOfLines={1} ellipsizeMode="middle">{activeAccount.address}</Text>
+                <Button title="Copy Address" onPress={handleCopyWallet} />
+              </>
+            ) : (
+              <Text style={styles.modalText}>No wallet connected. You are playing off-chain.</Text>
+            )}
+            <Pressable style={{marginTop: 16}} onPress={() => setIsWalletModalVisible(false)}>
+              <Text style={{color: '#EF4444', textAlign: 'center', fontWeight: 'bold'}}>Close</Text>
+            </Pressable>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -248,5 +286,43 @@ const styles = StyleSheet.create({
   },
   navItem: {
     width: '100%',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1E3A8A',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#4B5563',
+    marginBottom: 8,
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#6B7280',
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+    textAlign: 'center',
   }
 });

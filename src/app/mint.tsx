@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, ActivityIndicator, Alert, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
 import { getPetImage } from '@/lib/pets';
+import { showAlert, apiClient } from '@/lib/utils';
+import { useAppState } from '@/lib/globalState';
 
 export default function MintScreen() {
   const router = useRouter();
   const { flokiBalance, ncbUser, activeAccount } = useAuth();
+  const { refreshAuth } = useAppState();
   
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,8 +21,7 @@ export default function MintScreen() {
 
   const fetchPets = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/data/read/pets`);
-      const data = await res.json();
+      const data = await apiClient('/api/data/read/pets');
       if (Array.isArray(data)) {
         setPets(data);
       }
@@ -50,28 +52,16 @@ export default function MintScreen() {
     setError('');
 
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/pets/mint`, {
+      await apiClient('/api/pets/mint', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ petName: petName.trim() })
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to mint pet");
-      }
 
       setPetName('');
-      // Refresh pets
+      // Refresh pets and balance
       fetchPets();
-      
-      if (Platform.OS !== 'web') {
-        Alert.alert("Success!", "You minted a new FlokiPet!");
-      } else {
-        alert("Success! You minted a new FlokiPet!");
-        // Refresh page to update balance in useAuth
-        window.location.reload();
-      }
+      refreshAuth();
+      showAlert("Success!", "You minted a new FlokiPet!");
     } catch (e: any) {
       setError(e.message);
     } finally {

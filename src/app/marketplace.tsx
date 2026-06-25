@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TextInput, ActivityIndicator, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount } from "thirdweb/react";
+import { useWeb3Transaction } from "@/hooks/useWeb3Transaction";
 import { getContract } from "thirdweb";
 import { transfer } from "thirdweb/extensions/erc20";
 import { ACTIVE_CHAIN, FLOKI_CONTRACT_ADDRESS, ADMIN_GAS_WALLET } from "@/lib/constants";
@@ -12,7 +13,7 @@ import { client } from "@/lib/thirdweb";
 export default function MarketplaceScreen() {
   const router = useRouter();
   const activeAccount = useActiveAccount();
-  const { mutate: sendTx, isPending } = useSendTransaction();
+  const { executeTx, isPending } = useWeb3Transaction();
   const [burnAmount, setBurnAmount] = useState("");
   const [contributedGas, setContributedGas] = useState(0);
 
@@ -32,17 +33,15 @@ export default function MarketplaceScreen() {
         amount: burnAmount,
       });
 
-      sendTx(transaction, {
-        onSuccess: () => {
+      executeTx(
+        transaction,
+        `Successfully contributed ${burnAmount} FLOKI to generate game gas!`,
+        "Failed to contribute FLOKI. Please try again.",
+        () => {
           setContributedGas(prev => prev + Number(burnAmount));
           setBurnAmount("");
-          Alert.alert("Success", `Successfully contributed ${burnAmount} FLOKI to generate game gas!`);
-        },
-        onError: (error) => {
-          console.error("Burn failed:", error);
-          Alert.alert("Error", "Failed to contribute FLOKI. Please try again.");
         }
-      });
+      );
     } catch (error) {
       console.error(error);
     }

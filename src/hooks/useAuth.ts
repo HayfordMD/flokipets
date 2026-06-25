@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
+import { useAppState } from '@/lib/globalState';
 
 export function useAuth() {
   const activeAccount = useActiveAccount();
   const [ncbUser, setNcbUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [flokiBalance, setFlokiBalance] = useState<number>(0);
+  const { shouldRefreshAuth } = useAppState();
 
   useEffect(() => {
     let isMounted = true;
@@ -27,6 +29,8 @@ export function useAuth() {
         if (sessionData?.user) {
           if (isMounted) setNcbUser(sessionData.user);
           hasNcbUser = true;
+        } else {
+          if (isMounted) setNcbUser(null);
         }
 
         // 2. Sync with database if logged in via Web2 or Web3
@@ -59,7 +63,7 @@ export function useAuth() {
     syncSession();
 
     return () => { isMounted = false; };
-  }, [activeAccount, activeAccount?.address]); // re-run if wallet address changes
+  }, [activeAccount, activeAccount?.address, shouldRefreshAuth]); // re-run if wallet address changes or auth refresh triggered
 
   const isAdmin = 
     ncbUser?.is_admin === true ||
