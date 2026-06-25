@@ -4,8 +4,11 @@ import { ThirdwebProvider, AutoConnect } from 'thirdweb/react';
 import { client, appWallets } from '@/lib/thirdweb';
 import * as WebBrowser from 'expo-web-browser';
 
-WebBrowser.maybeCompleteAuthSession();
+import { Platform } from 'react-native';
 
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  WebBrowser.maybeCompleteAuthSession();
+}
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { TopNavBar } from '@/components/TopNavBar';
