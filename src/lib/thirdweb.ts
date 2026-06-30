@@ -12,7 +12,7 @@ export const appWallets = [
   inAppWallet({
     auth: {
       options: ["email", "google", "apple", "facebook", "passkey"],
-      mode: Platform.OS === "web" ? "popup" : undefined,
+      mode: Platform.OS === "web" ? "redirect" : undefined,
     },
   }),
 ];

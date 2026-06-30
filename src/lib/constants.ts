@@ -2,7 +2,7 @@ import { defineChain } from "thirdweb";
 
 // Use the environment variable to determine the chain, fallback to opBNBTestnet
 const envChain = process.env.EXPO_PUBLIC_ACTIVE_CHAIN;
-export const ACTIVE_CHAIN = defineChain(envChain === 'opBNB' ? 204 : 5611);
+export const ACTIVE_CHAIN = defineChain(envChain === 'BSC' ? 56 : (envChain === 'opBNB' ? 204 : 5611));
 
 // Read the contract address from .env or fallback
 export const FLOKI_CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_FLOKI_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
