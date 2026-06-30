@@ -1,5 +1,5 @@
 import { createThirdwebClient } from "thirdweb";
-import { inAppWallet } from "thirdweb/wallets";
+import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { ACTIVE_CHAIN } from "./constants";
 
 export const client = createThirdwebClient({
@@ -15,4 +15,6 @@ export const appWallets = [
       mode: Platform.OS === "web" ? "redirect" : undefined,
     },
   }),
+  createWallet("io.metamask"),
+  createWallet("walletConnect"),
 ];
