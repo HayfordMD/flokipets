@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { Platform, Pressable, Modal, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { ConnectButton } from "thirdweb/react";
+import { ConnectButton, useDisconnect, useActiveWallet } from "thirdweb/react";
 import { client, appWallets } from '@/lib/thirdweb';
 import { ACTIVE_CHAIN, MAX_OFFCHAIN_FLOKI } from "@/lib/constants";
 import { useFlokiBalance } from '@/hooks/useFlokiBalance';
@@ -21,6 +21,8 @@ export default function DashboardScreen() {
   const { refreshAuth } = useAppState();
   const { flokiBalance: petFloki, ncbUser, loading, activeAccount, isAdmin } = useAuth();
   const { formattedBalance: onChainFloki, isLoading: isBalanceLoading } = useFlokiBalance();
+  const { disconnect } = useDisconnect();
+  const wallet = useActiveWallet();
 
   const displayBalance = activeAccount ? (isBalanceLoading ? "..." : onChainFloki) : petFloki;
   const isLimitReached = !activeAccount && petFloki >= MAX_OFFCHAIN_FLOKI;
@@ -49,7 +51,10 @@ export default function DashboardScreen() {
 
   const handleLogout = async () => {
     try {
-      await apiClient('/api/auth/sign-out', { method: 'POST' });
+      if (wallet) {
+        disconnect(wallet);
+      }
+      await apiClient('/api/auth/sign-out', { method: 'POST', body: JSON.stringify({}) });
       refreshAuth();
       router.replace('/');
     } catch (e) {

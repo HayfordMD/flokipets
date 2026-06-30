@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
+import { useDisconnect, useActiveWallet } from "thirdweb/react";
 
 export const TopNavBar = () => {
   const { ncbUser, activeAccount, isAdmin } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
+  const { disconnect } = useDisconnect();
+  const wallet = useActiveWallet();
 
   if (!ncbUser && !activeAccount) {
     return null; // Don't show if not logged in
@@ -14,7 +17,14 @@ export const TopNavBar = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
+      if (wallet) {
+        disconnect(wallet);
+      }
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
       if (Platform.OS === 'web') {
         window.location.reload();
       }

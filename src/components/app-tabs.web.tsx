@@ -17,6 +17,7 @@ import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
+import { useDisconnect, useActiveWallet } from "thirdweb/react";
 
 export default function AppTabs() {
   return (
@@ -65,10 +66,19 @@ export function CustomTabList(props: TabListProps) {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const { ncbUser, activeAccount } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { disconnect } = useDisconnect();
+  const wallet = useActiveWallet();
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { method: 'POST' });
+      if (wallet) {
+        disconnect(wallet);
+      }
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/sign-out`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
       if (Platform.OS === 'web') {
         window.location.reload();
       }
